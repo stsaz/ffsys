@@ -1,10 +1,9 @@
 /**
-Copyright (c) 2013 Simon Zolin
-*/
+2013 Simon Zolin */
 
-#include <FFOS/string.h>
-#include <FFOS/error.h>
-#include <FFOS/test.h>
+#include <ffsys/string.h>
+#include <ffsys/error.h>
+#include <ffsys/test.h>
 
 
 static int test_str()

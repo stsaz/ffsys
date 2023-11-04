@@ -1,11 +1,10 @@
-/** ffos: pipe.h tester
-2020, Simon Zolin
-*/
+/** ffsys: pipe.h tester
+2020, Simon Zolin */
 
-#include <FFOS/pipe.h>
-#include <FFOS/file.h>
-#include <FFOS/string.h>
-#include <FFOS/test.h>
+#include <ffsys/pipe.h>
+#include <ffsys/file.h>
+#include <ffsys/string.h>
+#include <ffsys/test.h>
 
 void test_pipe_unnamed()
 {
@@ -30,13 +29,13 @@ void test_pipe_named()
 	char buf[64];
 	fffd l, c, lc;
 #ifdef FF_WIN
-	const char *name = FFPIPE_NAME_PREFIX "ffostest.pipe";
+	const char *name = FFPIPE_NAME_PREFIX "ffsystest.pipe";
 
 	x_sys(FFPIPE_NULL != (l = ffpipe_create_named(name, 0)));
 
 #else
 
-	const char *name = "/tmp/ffostest.unix";
+	const char *name = "/tmp/ffsystest.unix";
 	fffile_remove(name);
 
 	x_sys(FFPIPE_NULL != (l = ffpipe_create_named(name, FFPIPE_NONBLOCK)));

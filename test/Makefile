@@ -1,12 +1,12 @@
-# ffos makefile
+# ffsys makefile
 
 ROOT := ../..
-FFOS_DIR := $(ROOT)/ffos
+FFSYS_DIR := $(ROOT)/ffsys
 FFBASE_DIR := $(ROOT)/ffbase
 
 include $(FFBASE_DIR)/conf.mk
 
-TEST_EXE := ffostest$(DOTEXE)
+TEST_EXE := ffsystest$(DOTEXE)
 
 OBJ := \
 	backtrace.o \
@@ -53,7 +53,8 @@ default: $(TEST_EXE)
 clean:
 	$(RM) $(TEST_EXE) $(OBJ)
 
-CFLAGS := -MMD -MP -I$(FFOS_DIR) -I$(FFBASE_DIR) \
+CFLAGS := -MMD -MP \
+	-I$(FFSYS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -Wno-array-bounds -fno-strict-aliasing \
 	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g
 ifeq "$(DEBUG)" "1"
@@ -83,13 +84,13 @@ endif
 
 -include $(wildcard *.d)
 
-%.o: $(FFOS_DIR)/FFOS/%.c
+%.o: $(FFSYS_DIR)/ffsys/%.c
 	$(C) $(CFLAGS) $< -o $@
 
-%.o: $(FFOS_DIR)/test/%.c
+%.o: $(FFSYS_DIR)/test/%.c
 	$(C) $(CFLAGS) $< -o $@
 
-%.o: $(FFOS_DIR)/test/%.cpp
+%.o: $(FFSYS_DIR)/test/%.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(TEST_EXE): $(OBJ)

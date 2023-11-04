@@ -1,10 +1,9 @@
-/** ffos: timer.h tester
-2020, Simon Zolin
-*/
+/** ffsys: timer.h tester
+2020, Simon Zolin */
 
-#include <FFOS/time.h>
-#include <FFOS/timer.h>
-#include <FFOS/test.h>
+#include <ffsys/time.h>
+#include <ffsys/timer.h>
+#include <ffsys/test.h>
 
 void test_time()
 {

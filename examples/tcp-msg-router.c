@@ -1,4 +1,4 @@
-/* ffos: TCP message routing server
+/* ffsys: TCP message routing server
 Receives TCP data from a client and sends it to all other clients.
 2023, Simon Zolin */
 
@@ -14,11 +14,11 @@ nc IP LISTEN_PORT
 nc IP LISTEN_PORT
 */
 
-#include <FFOS/queue.h>
-#include <FFOS/socket.h>
-#include <FFOS/process.h>
-#include <FFOS/std.h>
-#include <FFOS/ffos-extern.h>
+#include <ffsys/queue.h>
+#include <ffsys/socket.h>
+#include <ffsys/process.h>
+#include <ffsys/std.h>
+#include <ffsys/globals.h>
 #include <ffbase/vector.h>
 
 

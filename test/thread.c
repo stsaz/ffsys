@@ -1,9 +1,8 @@
-/** ffos: thread.h tester
-2020, Simon Zolin
-*/
+/** ffsys: thread.h tester
+2020, Simon Zolin */
 
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
+#include <ffsys/thread.h>
+#include <ffsys/test.h>
 
 static int FFTHREAD_PROCCALL thdfunc(void *param)
 {

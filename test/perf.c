@@ -1,10 +1,9 @@
-/** ffos: perf.h tester
-2020, Simon Zolin
-*/
+/** ffsys: perf.h tester
+2020, Simon Zolin */
 
-#include <FFOS/perf.h>
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
+#include <ffsys/perf.h>
+#include <ffsys/thread.h>
+#include <ffsys/test.h>
 
 void test_clock()
 {

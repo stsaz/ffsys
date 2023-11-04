@@ -1,11 +1,11 @@
-# ffos: Makefile for example code
+# ffsys: Makefile for example code
 
 ROOT_DIR := ../..
 FFBASE_DIR := $(ROOT_DIR)/ffbase
-FFOS_DIR := $(ROOT_DIR)/ffos
-DIR := $(FFOS_DIR)/examples
+FFSYS_DIR := $(ROOT_DIR)/ffsys
+DIR := $(FFSYS_DIR)/examples
 LINKER := gcc
-CFLAGS := -I$(FFOS_DIR) -I$(FFBASE_DIR)
+CFLAGS := -I$(FFSYS_DIR) -I$(FFBASE_DIR)
 CFLAGS += -O0 -g
 
 all: tcp-echo-server \

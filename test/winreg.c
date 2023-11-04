@@ -1,14 +1,13 @@
 /**
-Copyright (c) 2017 Simon Zolin
-*/
+2017 Simon Zolin */
 
-#include <FFOS/winreg.h>
-#include <FFOS/test.h>
+#include <ffsys/winreg.h>
+#include <ffsys/test.h>
 
 void test_winreg_enum(ffwinreg k)
 {
 	ffwinreg k2;
-	x_sys(FFWINREG_NULL != (k2 = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffostest\\subkey", FFWINREG_CREATE | FFWINREG_READWRITE)));
+	x_sys(FFWINREG_NULL != (k2 = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffsystest\\subkey", FFWINREG_CREATE | FFWINREG_READWRITE)));
 
 	ffwinreg_enum e = {};
 	ffwinreg_enum_init(&e, FFWINREG_ENUM_VALSTR);
@@ -55,7 +54,7 @@ void test_winreg()
 	ffwinreg_val val;
 	char buf[64];
 
-	x_sys(FFWINREG_NULL != (k = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffostest", FFWINREG_CREATE | FFWINREG_READWRITE)));
+	x_sys(FFWINREG_NULL != (k = ffwinreg_open(HKEY_CURRENT_USER, "Software\\ffsystest", FFWINREG_CREATE | FFWINREG_READWRITE)));
 
 	// String
 	val.type = REG_SZ;

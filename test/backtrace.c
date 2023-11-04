@@ -1,9 +1,8 @@
-/** ffos: backtrace.h tester
-2020, Simon Zolin
-*/
+/** ffsys: backtrace.h tester
+2020, Simon Zolin */
 
-#include <FFOS/backtrace.h>
-#include <FFOS/test.h>
+#include <ffsys/backtrace.h>
+#include <ffsys/test.h>
 
 void test_backtrace()
 {

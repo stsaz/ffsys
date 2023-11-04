@@ -1,9 +1,8 @@
-/** ffos: semaphore.h tester
-2020, Simon Zolin
-*/
+/** ffsys: semaphore.h tester
+2020, Simon Zolin */
 
-#include <FFOS/semaphore.h>
-#include <FFOS/test.h>
+#include <ffsys/semaphore.h>
+#include <ffsys/test.h>
 
 void test_semaphore_unnamed()
 {
@@ -28,7 +27,7 @@ void test_semaphore_unnamed()
 
 void test_semaphore_named()
 {
-	const char *name = "/ffos-test.sem";
+	const char *name = "/ffsys-test.sem";
 	ffsem s, s2;
 
 	ffsem_unlink(name);

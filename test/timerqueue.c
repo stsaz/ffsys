@@ -1,10 +1,9 @@
-/** ffos: timerqueue.h tester
-2020, Simon Zolin
-*/
+/** ffsys: timerqueue.h tester
+2020, Simon Zolin */
 
-#include <FFOS/time.h>
-#include <FFOS/timerqueue.h>
-#include <FFOS/test.h>
+#include <ffsys/time.h>
+#include <ffsys/timerqueue.h>
+#include <ffsys/test.h>
 
 static int tq_func_n;
 

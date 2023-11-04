@@ -1,12 +1,11 @@
-/** ffos: filemap.h tester
-2020, Simon Zolin
-*/
+/** ffsys: filemap.h tester
+2020, Simon Zolin */
 
-#include <FFOS/filemap.h>
-#include <FFOS/file.h>
-#include <FFOS/string.h>
-#include <FFOS/error.h>
-#include <FFOS/test.h>
+#include <ffsys/filemap.h>
+#include <ffsys/file.h>
+#include <ffsys/string.h>
+#include <ffsys/error.h>
+#include <ffsys/test.h>
 
 
 #define HELLO "hello\n"

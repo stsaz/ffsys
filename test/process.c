@@ -1,14 +1,13 @@
-/** ffos: process.h tester
-2020, Simon Zolin
-*/
+/** ffsys: process.h tester
+2020, Simon Zolin */
 
-#include <FFOS/process.h>
-#include <FFOS/pipe.h>
-#include <FFOS/file.h>
-#include <FFOS/queue.h>
-#include <FFOS/signal.h>
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
+#include <ffsys/process.h>
+#include <ffsys/pipe.h>
+#include <ffsys/file.h>
+#include <ffsys/queue.h>
+#include <ffsys/signal.h>
+#include <ffsys/thread.h>
+#include <ffsys/test.h>
 
 extern const char *ffostest_argv0;
 

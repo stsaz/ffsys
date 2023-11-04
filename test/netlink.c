@@ -1,9 +1,8 @@
-/** ffos: netlink tester
-2022, Simon Zolin
-*/
+/** ffsys: netlink tester
+2022, Simon Zolin */
 
-#include <FFOS/netlink.h>
-#include <FFOS/test.h>
+#include <ffsys/netlink.h>
+#include <ffsys/test.h>
 
 void test_netlink()
 {

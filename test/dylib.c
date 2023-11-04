@@ -1,9 +1,8 @@
-/** ffos: dylib.h tester
-2020, Simon Zolin
-*/
+/** ffsys: dylib.h tester
+2020, Simon Zolin */
 
-#include <FFOS/dylib.h>
-#include <FFOS/test.h>
+#include <ffsys/dylib.h>
+#include <ffsys/test.h>
 
 void _test_dl(const char *fn, const char *func)
 {

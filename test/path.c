@@ -1,9 +1,8 @@
-/** ffos: path.h tester
-2020, Simon Zolin
-*/
+/** ffsys: path.h tester
+2020, Simon Zolin */
 
-#include <FFOS/path.h>
-#include <FFOS/test.h>
+#include <ffsys/path.h>
+#include <ffsys/test.h>
 
 #define STR2(s)  (char*)(s), FFS_LEN(s)
 

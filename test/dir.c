@@ -1,14 +1,13 @@
 /**
-Copyright (c) 2013 Simon Zolin
-*/
+2013 Simon Zolin */
 
-#include <FFOS/string.h>
-#include <FFOS/dir.h>
-#include <FFOS/dirscan.h>
-#include <FFOS/path.h>
-#include <FFOS/file.h>
-#include <FFOS/error.h>
-#include <FFOS/test.h>
+#include <ffsys/string.h>
+#include <ffsys/dir.h>
+#include <ffsys/dirscan.h>
+#include <ffsys/path.h>
+#include <ffsys/file.h>
+#include <ffsys/error.h>
+#include <ffsys/test.h>
 #include <ffbase/stringz.h>
 
 
@@ -112,7 +111,7 @@ void test_dirscan()
 
 	const char *name;
 	static const char *names[] = {
-		"ffostest-dirscan",
+		"ffsystest-dirscan",
 			"filea",
 			"fileb",
 			"filec",

@@ -1,12 +1,11 @@
-/** ffos: file.h tester
-2020, Simon Zolin
-*/
+/** ffsys: file.h tester
+2020, Simon Zolin */
 
-#include <FFOS/string.h>
-#include <FFOS/file.h>
-#include <FFOS/dir.h>
+#include <ffsys/string.h>
+#include <ffsys/file.h>
+#include <ffsys/dir.h>
 #include <ffbase/stringz.h>
-#include <FFOS/test.h>
+#include <ffsys/test.h>
 
 #ifdef FF_UNIX
 #define TMP_PATH "/tmp"

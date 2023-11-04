@@ -1,10 +1,9 @@
-/** ffos: error.h tester
-2020, Simon Zolin
-*/
+/** ffsys: error.h tester
+2020, Simon Zolin */
 
-#include <FFOS/string.h>
-#include <FFOS/error.h>
-#include <FFOS/test.h>
+#include <ffsys/string.h>
+#include <ffsys/error.h>
+#include <ffsys/test.h>
 
 void test_error()
 {

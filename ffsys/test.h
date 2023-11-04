@@ -1,0 +1,84 @@
+/** ffsys: test functions
+2020, Simon Zolin */
+
+#include <ffsys/error.h>
+#include <ffsys/std.h>
+#include <ffsys/string.h>
+#include <ffbase/stringz.h>
+
+#define FFTEST_TIMECALL(f)  f
+
+struct ffos_test {
+	ffuint checks_success;
+	ffuint keep_running :1;
+	ffuint log_all_checks :1;
+};
+
+extern struct ffos_test fftest;
+
+static inline void test_check(int ok, const char *file, ffuint line, const char *func, const char *fmt, ...)
+{
+	if (fftest.log_all_checks) {
+		int e = fferr_last();
+		ffstderr_fmt("%s:%d\n", file, line);
+		fferr_set(e);
+	}
+
+	if (ok) {
+		fftest.checks_success++;
+		return;
+	}
+
+	ffstr s = {};
+	ffsize cap = 0;
+	ffstr_growfmt(&s, &cap, "FAIL: %s:%u: %s: ", file, line, func);
+
+	va_list va;
+	va_start(va, fmt);
+	ffstr_growfmtv(&s, &cap, fmt, va);
+	va_end(va);
+
+	ffstr_growaddchar(&s, &cap, '\n');
+	ffstderr_write(s.ptr, s.len);
+	ffstr_free(&s);
+
+	if (!fftest.keep_running)
+		abort();
+}
+
+#define x(expr) \
+	test_check(expr, __FILE__, __LINE__, __func__, "%s", #expr)
+
+#define xieq(i1, i2) \
+({ \
+	ffint64 __i1 = (i1); \
+	ffint64 __i2 = (i2); \
+	test_check((__i1 == __i2), __FILE__, __LINE__, __func__, "%D != %D", __i1, __i2); \
+})
+
+#define xstr(str, sz) \
+({ \
+	ffstr __s = str; \
+	test_check(ffstr_eqz(&__s, sz), __FILE__, __LINE__, __func__, "'%S' != '%s'", &__s, sz); \
+})
+
+#define xseq(str_ptr, sz)  xstr(*str_ptr, sz)
+
+#define xsz(sz1, sz2) \
+({ \
+	test_check(ffsz_eq(sz1, sz2), __FILE__, __LINE__, __func__, "'%s' != '%s'", sz1, sz2); \
+})
+
+/** Expect TRUE or die with system error */
+#define x_sys(expr) \
+({ \
+	test_check(expr, __FILE__, __LINE__, __func__, "%s: %E", #expr, fferr_last()); \
+})
+
+/** Expect equal integers or die with system error */
+#define xint_sys(i1, i2) \
+({ \
+	ffint64 __i1 = (i1); \
+	ffint64 __i2 = (i2); \
+	test_check((__i1 == __i2), __FILE__, __LINE__, __func__, "%D != %D: %E", __i1, __i2, fferr_last()); \
+})

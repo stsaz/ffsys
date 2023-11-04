@@ -1,11 +1,10 @@
-/** ffos: std.h tester
-2020, Simon Zolin
-*/
+/** ffsys: std.h tester
+2020, Simon Zolin */
 
-#include <FFOS/std.h>
-#include <FFOS/file.h>
-#include <FFOS/queue.h>
-#include <FFOS/test.h>
+#include <ffsys/std.h>
+#include <ffsys/file.h>
+#include <ffsys/queue.h>
+#include <ffsys/test.h>
 
 #ifdef FF_WIN
 #define S1  "Привет\r\n"

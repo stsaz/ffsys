@@ -1,10 +1,9 @@
-/** ffos: socket.h tester
-2020, Simon Zolin
-*/
+/** ffsys: socket.h tester
+2020, Simon Zolin */
 
-#include <FFOS/socket.h>
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
+#include <ffsys/socket.h>
+#include <ffsys/thread.h>
+#include <ffsys/test.h>
 
 int thread_socket_udp_server(void *param)
 {

@@ -1,13 +1,12 @@
-/** ffos: asyncio.h tester
-2020, Simon Zolin
-*/
+/** ffsys: asyncio.h tester
+2020, Simon Zolin */
 
-#include <FFOS/asyncio.h>
-#include <FFOS/string.h>
-#include <FFOS/file.h>
-#include <FFOS/dir.h>
+#include <ffsys/asyncio.h>
+#include <ffsys/string.h>
+#include <ffsys/file.h>
+#include <ffsys/dir.h>
 #include <ffbase/stringz.h>
-#include <FFOS/test.h>
+#include <ffsys/test.h>
 
 struct aio_test {
 	char *buf;

@@ -1,19 +1,18 @@
-/** ffos: filemon.h tester
-2022, Simon Zolin
-*/
+/** ffsys: filemon.h tester
+2022, Simon Zolin */
 
-#include <FFOS/filemon.h>
-#include <FFOS/file.h>
-#include <FFOS/test.h>
+#include <ffsys/filemon.h>
+#include <ffsys/file.h>
+#include <ffsys/test.h>
 
 #ifdef FF_WIN
 
-#include <FFOS/queue.h>
+#include <ffsys/queue.h>
 
 void test_filemon()
 {
 	const char *watchpath = ".";
-	const char *path = "./ffostest-filemon";
+	const char *path = "./ffsystest-filemon";
 	fffile_remove(path);
 
 	fffilemon fm;
@@ -83,7 +82,7 @@ void test_filemon()
 void test_filemon()
 {
 	const char *watchpath = "/tmp";
-	const char *path = "/tmp/ffostest-filemon";
+	const char *path = "/tmp/ffsystest-filemon";
 	fffile_remove(path);
 	fffd f;
 	x_sys(FFFILE_NULL != (f = fffile_open(path, FFFILE_CREATE | FFFILE_WRITEONLY)));

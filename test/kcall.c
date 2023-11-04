@@ -1,10 +1,9 @@
-/** ffos: kcall.h tester
-2022, Simon Zolin
-*/
+/** ffsys: kcall.h tester
+2022, Simon Zolin */
 
-#include <FFOS/queue.h>
-#include <FFOS/kcall.h>
-#include <FFOS/test.h>
+#include <ffsys/queue.h>
+#include <ffsys/kcall.h>
+#include <ffsys/test.h>
 
 static void kc_complete(void *param)
 {
@@ -13,7 +12,7 @@ static void kc_complete(void *param)
 
 void test_kcall()
 {
-	const char *fn = "kcall.ffos";
+	const char *fn = "kcall.ffsys";
 	fffile_remove(fn);
 
 	struct ffkcallqueue q = {};

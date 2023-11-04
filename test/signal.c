@@ -1,10 +1,9 @@
-/** ffos: signal.h tester
-2020, Simon Zolin
-*/
+/** ffsys: signal.h tester
+2020, Simon Zolin */
 
-#include <FFOS/signal.h>
-#include <FFOS/thread.h>
-#include <FFOS/test.h>
+#include <ffsys/signal.h>
+#include <ffsys/thread.h>
+#include <ffsys/test.h>
 
 #ifdef FF_UNIX
 void test_unixsignal()

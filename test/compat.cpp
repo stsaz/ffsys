@@ -1,38 +1,37 @@
-/** ffos: C++ compatibility tester
-2020, Simon Zolin
-*/
+/** ffsys: C++ compatibility tester
+2020, Simon Zolin */
 
-#include <FFOS/base.h>
+#include <ffsys/base.h>
 
-#include <FFOS/backtrace.h>
-#include <FFOS/dir.h>
-#include <FFOS/dylib.h>
-#include <FFOS/error.h>
-#include <FFOS/file.h>
-#include <FFOS/filemap.h>
-#include <FFOS/kcall.h>
-#include <FFOS/netconf.h>
-#include <FFOS/path.h>
-#include <FFOS/perf.h>
-#include <FFOS/pipe.h>
-#include <FFOS/process.h>
-#include <FFOS/queue.h>
-#include <FFOS/random.h>
-#include <FFOS/semaphore.h>
-#include <FFOS/signal.h>
-#include <FFOS/socket.h>
-#include <FFOS/std.h>
-#include <FFOS/string.h>
-#include <FFOS/thread.h>
-#include <FFOS/time.h>
-#include <FFOS/timer.h>
+#include <ffsys/backtrace.h>
+#include <ffsys/dir.h>
+#include <ffsys/dylib.h>
+#include <ffsys/error.h>
+#include <ffsys/file.h>
+#include <ffsys/filemap.h>
+#include <ffsys/kcall.h>
+#include <ffsys/netconf.h>
+#include <ffsys/path.h>
+#include <ffsys/perf.h>
+#include <ffsys/pipe.h>
+#include <ffsys/process.h>
+#include <ffsys/queue.h>
+#include <ffsys/random.h>
+#include <ffsys/semaphore.h>
+#include <ffsys/signal.h>
+#include <ffsys/socket.h>
+#include <ffsys/std.h>
+#include <ffsys/string.h>
+#include <ffsys/thread.h>
+#include <ffsys/time.h>
+#include <ffsys/timer.h>
 
 #ifdef FF_WIN
-#include <FFOS/filemon.h>
-#include <FFOS/volume.h>
-#include <FFOS/winreg.h>
+#include <ffsys/filemon.h>
+#include <ffsys/volume.h>
+#include <ffsys/winreg.h>
 
 #elif defined FF_LINUX
-#include <FFOS/filemon.h>
-#include <FFOS/netlink.h>
+#include <ffsys/filemon.h>
+#include <ffsys/netlink.h>
 #endif

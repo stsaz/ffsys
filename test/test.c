@@ -1,16 +1,15 @@
 /**
-Copyright (c) 2013 Simon Zolin
-*/
+2013 Simon Zolin */
 
-#include <FFOS/process.h>
-#include <FFOS/random.h>
-#include <FFOS/netconf.h>
-#include <FFOS/sysconf.h>
-#include <FFOS/test.h>
-#include <FFOS/time.h>
-#include <FFOS/ffos-extern.h>
+#include <ffsys/process.h>
+#include <ffsys/random.h>
+#include <ffsys/netconf.h>
+#include <ffsys/sysconf.h>
+#include <ffsys/test.h>
+#include <ffsys/time.h>
+#include <ffsys/globals.h>
 #include <ffbase/stringz.h>
-#include <FFOS/../test/tests.h>
+#include <ffsys/../test/tests.h>
 #define FFARRAY_FOREACH FF_FOREACH
 
 struct ffos_test fftest;
@@ -59,21 +58,21 @@ struct test_s {
 
 // function declarations
 #define X(NAME) extern void test_##NAME();
-FFOS_TESTS_AUTO(X)
-FFOS_TESTS_AUTO_OS(X)
-FFOS_TESTS_MANUAL(X)
-FFOS_TESTS_MANUAL_OS(X)
+FFSYS_TESTS_AUTO(X)
+FFSYS_TESTS_AUTO_OS(X)
+FFSYS_TESTS_MANUAL(X)
+FFSYS_TESTS_MANUAL_OS(X)
 #undef X
 
 // function tables
 #define X(NAME) { #NAME, &test_##NAME },
 static const struct test_s atests[] = {
-	FFOS_TESTS_AUTO(X)
-	FFOS_TESTS_AUTO_OS(X)
+	FFSYS_TESTS_AUTO(X)
+	FFSYS_TESTS_AUTO_OS(X)
 };
 static const struct test_s natests[] = {
-	FFOS_TESTS_MANUAL(X)
-	FFOS_TESTS_MANUAL_OS(X)
+	FFSYS_TESTS_MANUAL(X)
+	FFSYS_TESTS_MANUAL_OS(X)
 };
 #undef X
 
@@ -85,7 +84,7 @@ int main(int argc, const char **argv)
 	const struct test_s *t;
 
 	if (argc == 1) {
-		fflog("Usage:\n  ffostest [-k] TEST...");
+		fflog("Usage:\n  ffsystest [-k] TEST...");
 		ffstdout_fmt("Automatic tests: all ");
 		FFARRAY_FOREACH(atests, t) {
 			ffstdout_fmt("%s ", t->name);

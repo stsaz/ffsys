@@ -1,4 +1,4 @@
-/* ffos: echo server
+/* ffsys: echo server
 Receives TCP data from a client and sends it back.
 2020, Simon Zolin */
 
@@ -7,11 +7,11 @@ Receives TCP data from a client and sends it back.
 nc IP LISTEN_PORT
 */
 
-#include <FFOS/queue.h>
-#include <FFOS/socket.h>
-#include <FFOS/process.h>
-#include <FFOS/std.h>
-#include <FFOS/ffos-extern.h>
+#include <ffsys/queue.h>
+#include <ffsys/socket.h>
+#include <ffsys/process.h>
+#include <ffsys/std.h>
+#include <ffsys/globals.h>
 
 #define DBG(fmt, ...)  fflog("DBG : " fmt, ##__VA_ARGS__)
 #define ERR(fmt, ...)  fflog("ERR : " fmt, ##__VA_ARGS__)

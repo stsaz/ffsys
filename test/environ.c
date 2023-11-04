@@ -1,9 +1,8 @@
-/** ffos: environ.h tester
-2020, Simon Zolin
-*/
+/** ffsys: environ.h tester
+2020, Simon Zolin */
 
-#include <FFOS/environ.h>
-#include <FFOS/test.h>
+#include <ffsys/environ.h>
+#include <ffsys/test.h>
 
 #if defined FF_BSD || defined FF_APPLE
 extern char **environ;

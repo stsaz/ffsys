@@ -1,12 +1,11 @@
-/** ffos: queue.h tester
-2020, Simon Zolin
-*/
+/** ffsys: queue.h tester
+2020, Simon Zolin */
 
-#include <FFOS/queue.h>
-#include <FFOS/pipe.h>
-#include <FFOS/file.h>
-#include <FFOS/socket.h>
-#include <FFOS/test.h>
+#include <ffsys/queue.h>
+#include <ffsys/pipe.h>
+#include <ffsys/file.h>
+#include <ffsys/socket.h>
+#include <ffsys/test.h>
 
 /*
 . create kqueue
@@ -70,9 +69,9 @@ void test_kqueue_pipe()
 
 	kq = ffkq_create();
 
-	const char *name = FFPIPE_NAME_PREFIX "ffostest.pipe";
+	const char *name = FFPIPE_NAME_PREFIX "ffsystest.pipe";
 #ifdef FF_UNIX
-	name = "/tmp/ffostest.unix";
+	name = "/tmp/ffsystest.unix";
 	fffile_remove(name);
 #endif
 
