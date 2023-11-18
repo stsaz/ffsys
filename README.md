@@ -89,6 +89,12 @@ Step 2. In your Makefile:
 	FFBASE := YOUR_PROJECT/ffbase
 	CFLAGS += -I$(FFSYS) -I$(FFBASE)
 
+Optional preprocessor flags:
+
+| Flag      | Description |
+| ---       | --- |
+| `FF_MUSL` | UNIX: Compile for musl C library |
+
 Step 3. In your C source files:
 
 ```C
