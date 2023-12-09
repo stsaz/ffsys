@@ -257,7 +257,8 @@ enum FFFILE_OPEN {
 	FFFILE_APPEND = 0x4000,
 	FFFILE_NONBLOCK = 0,
 	FFFILE_NOATIME = 0,
-	FFFILE_DIRECT = FILE_FLAG_NO_BUFFERING | FILE_FLAG_OVERLAPPED,
+	FFFILE_DIRECT = FILE_FLAG_NO_BUFFERING,
+	FFFILE_ASYNCHRONOUS = FILE_FLAG_OVERLAPPED,
 };
 
 static inline fffd fffile_open(const char *name, ffuint flags)
@@ -605,6 +606,7 @@ enum FFFILE_OPEN {
 #else
 	FFFILE_DIRECT = O_DIRECT,
 #endif
+	FFFILE_ASYNCHRONOUS = 0,
 };
 
 static inline fffd fffile_open(const char *name, ffuint flags)
