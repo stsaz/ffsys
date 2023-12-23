@@ -64,7 +64,7 @@ static int _ffdirscan_filename_cmpz(const char *a, const char *b)
 
 static int _ffdirscan_cmpname(const void *a, const void *b, void *udata)
 {
-	const char *buf = udata;
+	const char *buf = (char*)udata;
 	ffuint off1 = *(ffuint*)a, off2 = *(ffuint*)b;
 
 	if (FFPATH_ICASE)
