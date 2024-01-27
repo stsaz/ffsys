@@ -126,7 +126,7 @@ static inline int ffdirscan_open(ffdirscan *d, const char *path, ffuint flags)
 	}
 	ffmem_free(wpath);  wpath = NULL;
 
-	if (NULL == (namebuf = ffmem_alloc(256*4)))
+	if (NULL == (namebuf = (char*)ffmem_alloc(256*4)))
 		goto end;
 
 #else

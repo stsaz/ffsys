@@ -55,8 +55,11 @@ static inline int ffdir_make_all(char *path, ffsize off)
 			r = !CreateDirectoryW(w, NULL);
 			w[off] = c;
 
-			if (r != 0 && GetLastError() != ERROR_ALREADY_EXISTS)
-				goto end;
+			if (r != 0) {
+				if (GetLastError() != ERROR_ALREADY_EXISTS)
+					goto end;
+				r = 0;
+			}
 
 			if (c == '\0')
 				break;
