@@ -38,6 +38,7 @@ enum FFDIRSCAN_F {
 /** Compare file names */
 static int _ffdirscan_filename_cmpz(const char *a, const char *b)
 {
+	int first_diff = 0;
 	for (ffsize i = 0;  ;  i++) {
 		ffuint cl = (ffbyte)a[i];
 		ffuint cr = (ffbyte)b[i];
@@ -52,12 +53,10 @@ static int _ffdirscan_filename_cmpz(const char *a, const char *b)
 			else if (cl > cr)
 				return 1;
 
-			if (a[i] < b[i])
-				return 1; // "a" < "A"
-			return -1;
+			first_diff = (a[i] < b[i]) ? 1 : -1; // "a" < "A"
 
 		} else if (cl == '\0') {
-			return 0;
+			return first_diff;
 		}
 	}
 }

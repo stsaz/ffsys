@@ -106,6 +106,8 @@ void test_dirscan()
 	x(_ffdirscan_filename_cmpz("/a", "/A") < 0);
 	x(_ffdirscan_filename_cmpz("/A", "/a") > 0);
 
+	x(_ffdirscan_filename_cmpz("/ab", "/Aa") > 0);
+
 	x(_ffdirscan_filename_cmpz("/a", "/B") < 0);
 	x(_ffdirscan_filename_cmpz("/B", "/a") > 0);
 
