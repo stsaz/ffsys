@@ -199,7 +199,7 @@ static inline ffssize ffpath_splitname(const char *fn, ffsize len, ffstr *name, 
 			ffstr_set(name, fn, len);
 		if (ext != NULL)
 			ext->len = 0;
-		return 0;
+		return dot;
 	}
 	return ffs_split(fn, len, dot, name, ext);
 }
