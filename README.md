@@ -22,50 +22,59 @@ ffsys advantages:
 
 Main:
 
-	base.h          Detect CPU, OS and compiler; base types; heap memory functions
-	globals.h       Define the global symbols needed by ffsys.
-	                Include this into one of your compilation units to make the linker happy.
+| File | Description |
+| --- | --- |
+| [base.h](ffsys/base.h)       | Detect CPU, OS and compiler; base types; heap memory functions |
+| [globals.h](ffsys/globals.h) | Define the global symbols needed by ffsys. Include this file into one of your compilation units to make the linker happy. |
 
 I/O, FS:
 
-	std.h           Standard I/O
-	file.h          Files
-	filemap.h       File mapping
-	pipe.h          Unnamed and named pipes
-	queue.h         Kernel queue
-	kcall.h         Kernel call queue (to call kernel functions asynchronously)
-	dir.h           File-system directory functions
-	dirscan.h       Scan directory for files
-	path.h          Native file-system paths
-	filemon.h       File system monitoring (Linux, Windows) (incompatible)
-	volume.h        Volumes (Windows)
-	winreg.h        Windows Registry
+| File | Description |
+| --- | --- |
+| [std.h](ffsys/std.h)         | Standard I/O |
+| [file.h](ffsys/file.h)       | Files |
+| [filemap.h](ffsys/filemap.h) | File mapping |
+| [pipe.h](ffsys/pipe.h)       | Unnamed and named pipes |
+| [queue.h](ffsys/queue.h)     | Kernel queue |
+| [kcall.h](ffsys/kcall.h)     | Kernel call queue (to call kernel functions asynchronously) |
+| [dir.h](ffsys/dir.h)         | File-system directory functions |
+| [dirscan.h](ffsys/dirscan.h) | Scan directory for files |
+| [path.h](ffsys/path.h)       | Native file-system paths |
+| [filemon.h](ffsys/filemon.h) | File system monitoring (Linux, Windows) (incompatible) |
+| [volume.h](ffsys/volume.h)   | Volumes (Windows) |
+| [winreg.h](ffsys/winreg.h)   | Windows Registry |
 
 Process, thread, IPC:
 
-	process.h       Process
-	environ.h       Process environment
-	thread.h        Threads
-	signal.h        UNIX signals, CPU exceptions
-	semaphore.h     Semaphores
-	perf.h          Process/thread performance counters
-	dylib.h         Dynamically loaded libraries
-	backtrace.h     Backtrace
+| File | Description |
+| --- | --- |
+| [process.h](ffsys/process.h)     | Process |
+| [environ.h](ffsys/environ.h)     | Process environment |
+| [thread.h](ffsys/thread.h)       | Threads |
+| [signal.h](ffsys/signal.h)       | UNIX signals, CPU exceptions |
+| [semaphore.h](ffsys/semaphore.h) | Semaphores |
+| [perf.h](ffsys/perf.h)           | Process/thread performance counters |
+| [dylib.h](ffsys/dylib.h)         | Dynamically loaded libraries |
+| [backtrace.h](ffsys/backtrace.h) | Backtrace |
 
 Network:
 
-	socket.h        Sockets, network address
-	netconf.h       Network configuration
-	netlink.h       Linux netlink helper functions
+| File | Description |
+| --- | --- |
+| [socket.h](ffsys/socket.h)   | Sockets, network address |
+| [netconf.h](ffsys/netconf.h) | Network configuration |
+| [netlink.h](ffsys/netlink.h) | Linux netlink helper functions |
 
 Misc:
 
-	time.h          Date and time
-	timer.h         System timer
-	timerqueue.h    Timer queue
-	string.h        Native system string
-	error.h         System error codes
-	random.h        Random number generator
+| File | Description |
+| --- | --- |
+| [time.h](ffsys/time.h)             | Date and time |
+| [timer.h](ffsys/timer.h)           | System timer |
+| [timerqueue.h](ffsys/timerqueue.h) | Timer queue |
+| [string.h](ffsys/string.h)         | Native system string |
+| [error.h](ffsys/error.h)           | System error codes |
+| [random.h](ffsys/random.h)         | Random number generator |
 
 
 ## How to use
@@ -85,9 +94,11 @@ git clone https://github.com/stsaz/ffbase
 
 Step 2. In your Makefile:
 
-	FFSYS := YOUR_PROJECT/ffsys
-	FFBASE := YOUR_PROJECT/ffbase
-	CFLAGS += -I$(FFSYS) -I$(FFBASE)
+```Makefile
+FFSYS := YOUR_PROJECT/ffsys
+FFBASE := YOUR_PROJECT/ffbase
+CFLAGS += -I$(FFSYS) -I$(FFBASE)
+```
 
 Optional preprocessor flags:
 
