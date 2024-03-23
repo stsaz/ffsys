@@ -50,9 +50,10 @@ static inline int ffthread_detach(ffthread t)
 	return 0 == CloseHandle(t);
 }
 
-static inline void ffthread_sleep(ffuint msec)
+static inline int ffthread_sleep(ffuint msec)
 {
 	Sleep(msec);
+	return 0;
 }
 
 static inline ffuint64 ffthread_curid()
@@ -66,6 +67,7 @@ static inline ffuint64 ffthread_curid()
 #include <errno.h>
 
 #if defined FF_LINUX
+	#include <time.h>
 	#if !defined FF_ANDROID
 		#define FFSYS_HAVE_pthread_timedjoin_np
 	#endif
@@ -190,9 +192,13 @@ static inline int ffthread_detach(ffthread t)
 	return pthread_detach(t);
 }
 
-static inline void ffthread_sleep(ffuint msec)
+static inline int ffthread_sleep(ffuint msec)
 {
-	usleep(msec * 1000);
+	struct timespec ts = {
+		.tv_sec = msec / 1000,
+		.tv_nsec = (msec % 1000) * 1000000,
+	};
+	return nanosleep(&ts, NULL);
 }
 
 #endif
@@ -219,4 +225,4 @@ static int ffthread_detach(ffthread t);
 static ffuint64 ffthread_curid();
 
 /** Suspend the thread for the specified time */
-static void ffthread_sleep(ffuint msec);
+static int ffthread_sleep(ffuint msec);

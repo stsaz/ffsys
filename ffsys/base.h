@@ -11,6 +11,10 @@
 		#define _GNU_SOURCE
 	#endif
 
+	#ifndef _POSIX_C_SOURCE
+		#define _POSIX_C_SOURCE  200112L // for posix_memalign()
+	#endif
+
 	#ifndef _LARGEFILE64_SOURCE
 		#define _LARGEFILE64_SOURCE 1
 	#endif
