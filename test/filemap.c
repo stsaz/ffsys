@@ -57,7 +57,7 @@ static int test_mapro(const char *fn)
 {
 	fffd fd
 		, fmap;
-	uint64 fsiz;
+	ffuint64 fsiz;
 	void *mapd;
 	size_t mapsz;
 

@@ -20,6 +20,7 @@ OBJ := \
 	kcall.o \
 	kqueue.o \
 	mem.o \
+	netconf.o \
 	path.o \
 	perf.o \
 	pipe.o \

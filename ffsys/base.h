@@ -45,9 +45,7 @@
 #endif
 
 #include <ffbase/base.h>
-
 #include <ffsys/detect-compiler.h>
-#include <ffsys/compiler-gcc.h>
 
 typedef signed char ffint8;
 typedef int ffbool;

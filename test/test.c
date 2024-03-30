@@ -3,7 +3,6 @@
 
 #include <ffsys/process.h>
 #include <ffsys/random.h>
-#include <ffsys/netconf.h>
 #include <ffsys/sysconf.h>
 #include <ffsys/test.h>
 #include <ffsys/time.h>
@@ -20,16 +19,6 @@ struct ffos_test fftest;
 	// x(FF_CMPSET(&v, 1, 2) && v == 2);
 	// x(!FF_CMPSET(&v, 1, 0) && v == 2);
 // }
-
-void test_netconf()
-{
-	ffnetconf nc = {};
-	x(0 == ffnetconf_get(&nc, FFNETCONF_DNS_ADDR));
-	x(nc.dns_addrs_num != 0);
-	x(nc.dns_addrs[0] != NULL);
-	printf("dns_addrs[0]: '%s'\n", nc.dns_addrs[0]);
-	ffnetconf_destroy(&nc);
-}
 
 void test_sysconf()
 {

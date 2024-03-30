@@ -15,8 +15,6 @@ FF_WIN
 	#define FF_LINUX
 	#ifdef ANDROID
 		#define FF_ANDROID
-	#else
-		#define FF_LINUX_MAINLINE // obsolete (use `!defined FF_ANDROID`)
 	#endif
 
 #elif defined __APPLE__ && defined __MACH__

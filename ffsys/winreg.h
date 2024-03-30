@@ -448,7 +448,7 @@ static int _ffwinreg_val_str(ffwinreg_enum *e, ffuint type, ffvec *value)
 	}
 
 	case REG_QWORD: {
-		ffuint64 i = *(uint64*)e->wval.ptr;
+		ffuint64 i = *(ffuint64*)e->wval.ptr;
 		value->len = ffs_format_r0((char*)value->ptr, value->cap, "0x%016xU (%U)", i, i);
 		break;
 	}
