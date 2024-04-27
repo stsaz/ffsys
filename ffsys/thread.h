@@ -5,7 +5,9 @@
 ffthread_create
 ffthread_join ffthread_detach
 ffthread_sleep
-ffthread_curid
+ffthread_curid ffthread_current
+ffthread_cpumask_set
+ffthread_affinity
 */
 
 #pragma once
@@ -50,10 +52,30 @@ static inline int ffthread_detach(ffthread t)
 	return 0 == CloseHandle(t);
 }
 
+typedef struct ffthread_cpumask ffthread_cpumask;
+struct ffthread_cpumask {
+	ffsize value;
+};
+
+static inline void ffthread_cpumask_set(ffthread_cpumask *mask, ffuint i)
+{
+	mask->value |= ((ffsize)1 << i);
+}
+
+static inline int ffthread_affinity(ffthread t, const ffthread_cpumask *mask)
+{
+	return (0 == SetThreadAffinityMask(t, mask->value));
+}
+
 static inline int ffthread_sleep(ffuint msec)
 {
 	Sleep(msec);
 	return 0;
+}
+
+static inline ffthread ffthread_current()
+{
+	return GetCurrentThread();
 }
 
 static inline ffuint64 ffthread_curid()
@@ -72,10 +94,12 @@ static inline ffuint64 ffthread_curid()
 		#define FFSYS_HAVE_pthread_timedjoin_np
 	#endif
 	#include <sys/syscall.h>
+	typedef cpu_set_t ffthread_cpumask;
 
 #elif defined FF_BSD
 	#define FFSYS_HAVE_pthread_timedjoin_np
 	#include <pthread_np.h>
+	typedef cpuset_t ffthread_cpumask;
 
 #endif
 
@@ -167,6 +191,11 @@ static inline int ffthread_join(ffthread t, ffuint timeout_ms, int *exit_code)
 	return 0;
 }
 
+static inline ffthread ffthread_current()
+{
+	return pthread_self();
+}
+
 static inline ffuint64 ffthread_curid()
 {
 #if defined FF_LINUX
@@ -190,6 +219,22 @@ static inline ffuint64 ffthread_curid()
 static inline int ffthread_detach(ffthread t)
 {
 	return pthread_detach(t);
+}
+
+static inline void ffthread_cpumask_set(ffthread_cpumask *mask, ffuint i)
+{
+	CPU_SET(i, mask);
+}
+
+static inline int ffthread_affinity(ffthread t, const ffthread_cpumask *mask)
+{
+#ifdef FF_ANDROID
+	errno = ENOSYS;
+	return -1;
+
+#else
+	return pthread_setaffinity_np(t, sizeof(*mask), mask);
+#endif
 }
 
 static inline int ffthread_sleep(ffuint msec)
@@ -220,6 +265,15 @@ static int ffthread_join(ffthread t, ffuint timeout_ms, int *exit_code);
 
 /** Detach thread */
 static int ffthread_detach(ffthread t);
+
+/** Add CPU number to mask. */
+static void ffthread_cpumask_set(ffthread_cpumask *mask, ffuint i);
+
+/** Set CPU affinity. */
+static int ffthread_affinity(ffthread t, const ffthread_cpumask *mask);
+
+/** Get the current thread descriptor. */
+static ffthread ffthread_current();
 
 /** Get ID of the current thread */
 static ffuint64 ffthread_curid();

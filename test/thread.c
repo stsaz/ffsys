@@ -17,6 +17,10 @@ void test_thread()
 	ffthread th = ffthread_create(&thdfunc, (void*)0x12345, 64 * 1024);
 	x_sys(th != FFTHREAD_NULL);
 
+	ffthread_cpumask cs = {};
+	ffthread_cpumask_set(&cs, 0);
+	x_sys(!ffthread_affinity(th, &cs));
+
 	fflog("waiting for thread...");
 	int code;
 	x(0 == ffthread_join(th, -1, &code));
