@@ -7,7 +7,7 @@ ffkcallq_process_cq
 ffkcall_cancel
 fffile_open_async
 fffile_info_async
-fffile_read_async fffile_write_async
+fffile_read_async fffile_write_async fffile_writeat_async
 */
 
 #pragma once
@@ -43,6 +43,9 @@ typedef void (*kcall_func)(void *obj);
 struct ffkcall {
 	struct ffkcallqueue *q;
 
+	kcall_func handler;
+	void *param;
+
 	ffushort op; // enum FFKCALL_OP
 	ffushort state; // 0, 1: in SQ, 2: in CQ
 	union {
@@ -59,13 +62,12 @@ struct ffkcall {
 			fffileinfo *finfo;
 		};
 		struct {
-			fffd fd;
-			void *buf;
-			ffsize size;
+			fffd	fd;
+			void*	buf;
+			ffsize	size;
+			ffuint64 offset;
 		};
 	};
-	kcall_func handler;
-	void *param;
 };
 
 enum FFKCALL_OP {
@@ -73,6 +75,7 @@ enum FFKCALL_OP {
 	FFKCALL_FILE_INFO,
 	FFKCALL_FILE_READ,
 	FFKCALL_FILE_WRITE,
+	FFKCALL_FILE_WRITEAT,
 	FFKCALL_NET_RESOLVE,
 };
 
@@ -93,6 +96,10 @@ static int _ffkcall_exec(struct ffkcall *kc)
 
 	case FFKCALL_FILE_WRITE:
 		kc->result = fffile_write(kc->fd, kc->buf, kc->size);
+		break;
+
+	case FFKCALL_FILE_WRITEAT:
+		kc->result = fffile_writeat(kc->fd, kc->buf, kc->size, kc->offset);
 		break;
 
 	case FFKCALL_NET_RESOLVE:
@@ -156,8 +163,8 @@ static inline void ffkcall_cancel(struct ffkcall *kc)
 static inline void _ffkcall_add(struct ffkcall *kc, int op)
 {
 	kc->op = op;
-	ffuint unused;
-	if (0 != ffrq_add(kc->q->sq, kc, &unused)) {
+	ffuint used;
+	if (0 != ffrq_add(kc->q->sq, kc, &used)) {
 		kc->op = 0;
 		fferr_set(FFKCALL_EAGAIN);
 		return;
@@ -168,22 +175,36 @@ static inline void _ffkcall_add(struct ffkcall *kc, int op)
 	fferr_set(FFKCALL_EINPROGRESS);
 }
 
+static int _ffkcall_busy(struct ffkcall *kc)
+{
+	if (kc->state != 0) {
+		// the previous operation is still active in SQ or CQ
+		fferr_set(FFKCALL_EBUSY);
+		return 1;
+	}
+	return 0;
+}
+
+static int _ffkcall_complete(struct ffkcall *kc)
+{
+	if (kc->op != 0) {
+		kc->op = 0;
+		fferr_set(kc->error);
+		return 1;
+	}
+	return 0;
+}
+
 static inline fffd fffile_open_async(const char *name, ffuint flags, struct ffkcall *kc)
 {
 	if (kc->q == NULL)
 		return fffile_open(name, flags);
 
-	if (kc->state != 0) {
-		// the previous operation is still active in SQ or CQ
-		fferr_set(FFKCALL_EBUSY);
+	if (_ffkcall_busy(kc))
 		return FFFILE_NULL;
-	}
 
-	if (kc->op != 0) {
-		kc->op = 0;
-		fferr_set(kc->error);
+	if (_ffkcall_complete(kc))
 		return (fffd)(ffssize)kc->result;
-	}
 
 	kc->name = name;
 	kc->flags = flags;
@@ -196,17 +217,11 @@ static inline int fffile_info_async(fffd fd, fffileinfo *fi, struct ffkcall *kc)
 	if (kc->q == NULL)
 		return fffile_info(fd, fi);
 
-	if (kc->state != 0) {
-		// the previous operation is still active in SQ or CQ
-		fferr_set(FFKCALL_EBUSY);
+	if (_ffkcall_busy(kc))
 		return -1;
-	}
 
-	if (kc->op != 0) {
-		kc->op = 0;
-		fferr_set(kc->error);
+	if (_ffkcall_complete(kc))
 		return kc->result;
-	}
 
 	kc->fd = fd;
 	kc->finfo = fi;
@@ -219,17 +234,11 @@ static inline ffssize fffile_read_async(fffd fd, void *buf, ffsize size, struct 
 	if (kc->q == NULL)
 		return fffile_read(fd, buf, size);
 
-	if (kc->state != 0) {
-		// the previous operation is still active in SQ or CQ
-		fferr_set(FFKCALL_EBUSY);
+	if (_ffkcall_busy(kc))
 		return -1;
-	}
 
-	if (kc->op != 0) {
-		kc->op = 0;
-		fferr_set(kc->error);
+	if (_ffkcall_complete(kc))
 		return kc->result;
-	}
 
 	kc->fd = fd;
 	kc->buf = buf;
@@ -243,17 +252,11 @@ static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, 
 	if (kc->q == NULL)
 		return fffile_write(fd, buf, size);
 
-	if (kc->state != 0) {
-		// the previous operation is still active in SQ or CQ
-		fferr_set(FFKCALL_EBUSY);
+	if (_ffkcall_busy(kc))
 		return -1;
-	}
 
-	if (kc->op != 0) {
-		kc->op = 0;
-		fferr_set(kc->error);
+	if (_ffkcall_complete(kc))
 		return kc->result;
-	}
 
 	kc->fd = fd;
 	kc->buf = (void*)buf;
@@ -262,22 +265,35 @@ static inline ffssize fffile_write_async(fffd fd, const void *buf, ffsize size, 
 	return -1;
 }
 
+static inline ffssize fffile_writeat_async(fffd fd, const void *buf, ffsize size, ffuint64 offset, struct ffkcall *kc)
+{
+	if (kc->q == NULL)
+		return fffile_writeat(fd, buf, size, offset);
+
+	if (_ffkcall_busy(kc))
+		return -1;
+
+	if (_ffkcall_complete(kc))
+		return kc->result;
+
+	kc->fd = fd;
+	kc->buf = (void*)buf;
+	kc->size = size;
+	kc->offset = offset;
+	_ffkcall_add(kc, FFKCALL_FILE_WRITEAT);
+	return -1;
+}
+
 static inline ffaddrinfo* ffaddrinfo_resolve_async(const char *name, int flags, struct ffkcall *kc)
 {
 	if (kc->q == NULL)
 		return ffaddrinfo_resolve(name, flags);
 
-	if (kc->state != 0) {
-		// the previous operation is still active in SQ or CQ
-		fferr_set(FFKCALL_EBUSY);
+	if (_ffkcall_busy(kc))
 		return NULL;
-	}
 
-	if (kc->op != 0) {
-		kc->op = 0;
-		fferr_set(kc->error);
+	if (_ffkcall_complete(kc))
 		return (ffaddrinfo*)kc->result;
-	}
 
 	kc->name = name;
 	kc->flags = flags;
