@@ -100,16 +100,35 @@ void test_sig(int sig)
 	ffthread_join(th, -1, NULL);
 }
 
-void test_sig_ctrlc()
+void ctrlc_wait()
 {
+	sig_number = 0;
 	fflog("Please press CTRL+C");
-	static const ffuint sigs[] = { FFSIG_INT };
-	ffsig_subscribe(sig_handler, sigs, FF_COUNT(sigs));
-
 	while (sig_number == 0) {
 		ffthread_sleep(500);
 	}
 	xieq((ffuint)FFSIG_INT, sig_number);
+}
+
+void test_sig_ctrlc()
+{
+	ffuint sig = FFSIG_INT;
+	ffsig_subscribe(sig_handler, &sig, 1);
+	ctrlc_wait();
+
+#ifndef FF_WIN
+	ctrlc_wait();
+	x(0);
+#endif
+}
+
+void test_sig_ctrlc_noreset()
+{
+	ffuint sig = FFSIG_INT;
+	ffsig_subscribe(sig_handler, &sig, 1 | FFSIG_NORESET);
+
+	ctrlc_wait();
+	ctrlc_wait();
 }
 
 void test_sig_abort()

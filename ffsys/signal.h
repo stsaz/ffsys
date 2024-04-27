@@ -23,6 +23,11 @@ struct ffsig_info {
 
 typedef void (*ffsig_handler)(struct ffsig_info *i);
 
+/** User's signal handler */
+FF_EXTERN ffsig_handler _ffsig_userhandler;
+
+#define FFSIG_NORESET  0x80000000
+
 #ifdef FF_WIN
 
 enum FFSIG {
@@ -34,26 +39,28 @@ enum FFSIG {
 	FFSIG_FPE = EXCEPTION_FLT_DIVIDE_BY_ZERO,
 };
 
-/** User's signal handler */
-FF_EXTERN ffsig_handler _ffsig_userhandler;
-
 /** Called by OS when a CTRL event is received from console */
 static BOOL WINAPI _ffsig_ctrl_handler(DWORD ctrl)
 {
+	ffsig_handler handler = (ffsig_handler)((ffsize)_ffsig_userhandler & ~1);
+
 	if (ctrl == CTRL_C_EVENT) {
 		struct ffsig_info i = {};
 		i.sig = FFSIG_INT;
-		_ffsig_userhandler(&i);
+		handler(&i);
 		return 1;
 	}
 	return 0;
 }
 
-/** Called by OS on a program exception
-We reset to the default exception handler on entry */
+/** Called by OS on a program exception. */
 static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 {
-	SetUnhandledExceptionFilter(NULL);
+	unsigned reset = (ffsize)_ffsig_userhandler & 1;
+	ffsig_handler handler = (ffsig_handler)((ffsize)_ffsig_userhandler & ~1);
+
+	if (reset)
+		SetUnhandledExceptionFilter(NULL);
 
 	struct ffsig_info i = {};
 	i.sig = inf->ExceptionRecord->ExceptionCode; //EXCEPTION_*
@@ -66,14 +73,18 @@ static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 		break;
 	}
 
-	_ffsig_userhandler(&i);
+	handler(&i);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
 static inline int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffuint nsigs)
 {
-	if (handler != NULL)
-		_ffsig_userhandler = handler;
+	unsigned reset = !(nsigs & FFSIG_NORESET);
+	nsigs &= ~FFSIG_NORESET;
+
+	if (handler != NULL) {
+		_ffsig_userhandler = (ffsig_handler)((ffsize)handler | reset);
+	}
 
 	ffbool exc = 0;
 	for (ffuint i = 0;  i != nsigs;  i++) {
@@ -235,9 +246,6 @@ static inline void ffsig_mask(int how, const int *sigs, ffuint nsigs)
 	sigprocmask(how, &mask, NULL);
 }
 
-/** User's signal handler */
-FF_EXTERN ffsig_handler _ffsig_userhandler;
-
 /** Called by OS with a signal we subscribed to
 If user set FFSIG_STACK handler, then for SIGSEGV this function is called on alternative stack
 Prior to this call the signal handler is set to default (SA_RESETHAND) */
@@ -257,30 +265,35 @@ static inline int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffu
 	if (handler != NULL)
 		_ffsig_userhandler = handler;
 
+	unsigned reset = !(nsigs & FFSIG_NORESET) ? SA_RESETHAND : 0;
+	nsigs &= ~FFSIG_NORESET;
+
 	int have_stack_sig = 0;
 	struct sigaction sa = {};
 	sa.sa_sigaction = &_ffsig_exc_handler;
 
 	for (ffuint i = 0;  i != nsigs;  i++) {
-		if (sigs[i] != FFSIG_STACK)
-			continue;
+		if (sigs[i] == FFSIG_STACK) {
 
-		sa.sa_flags = SA_SIGINFO | SA_RESETHAND | SA_ONSTACK;
-		stack_t stack;
-		stack.ss_sp = ffmem_alloc(SIGSTKSZ);
-		stack.ss_size = SIGSTKSZ;
-		stack.ss_flags = 0;
-		if (stack.ss_sp == NULL)
-			return -1;
-		if (0 != sigaltstack(&stack, NULL))
-			return -1;
-		if (0 != sigaction(SIGSEGV, &sa, NULL))
-			return -1;
-		have_stack_sig = 1;
-		break;
+			stack_t stack;
+			stack.ss_sp = ffmem_alloc(SIGSTKSZ);
+			stack.ss_size = SIGSTKSZ;
+			stack.ss_flags = 0;
+			if (stack.ss_sp == NULL)
+				return -1;
+			if (0 != sigaltstack(&stack, NULL))
+				return -1;
+
+			sa.sa_flags = SA_SIGINFO | SA_ONSTACK | reset;
+			if (0 != sigaction(SIGSEGV, &sa, NULL))
+				return -1;
+
+			have_stack_sig = 1;
+			break;
+		}
 	}
 
-	sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
+	sa.sa_flags = SA_SIGINFO | reset;
 	for (ffuint i = 0;  i != nsigs;  i++) {
 		if (sigs[i] == FFSIG_STACK
 			|| (sigs[i] == FFSIG_SEGV && have_stack_sig))
@@ -315,6 +328,7 @@ static inline int ffkqsig_readinfo(ffkqsig sig, ffkq_event *ev, struct ffsig_inf
 /** Subscribe to system signals
 handler: signal handler; only one per process
   NULL: use the current handler
+nsigs: N of signals in `sigs` | FFSIG_NORESET
 Return 0 on success */
 static int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffuint nsigs);
 

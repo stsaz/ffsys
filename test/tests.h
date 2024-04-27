@@ -51,6 +51,7 @@
 	X(netconf) /*network may be disabled*/ \
 	X(sig_abort) \
 	X(sig_ctrlc) \
+	X(sig_ctrlc_noreset) \
 	X(sig_fpe) \
 	X(sig_segv) \
 	X(sig_stack) \
