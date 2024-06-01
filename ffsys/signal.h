@@ -79,7 +79,7 @@ static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 
 static inline int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffuint nsigs)
 {
-	unsigned reset = !(nsigs & FFSIG_NORESET);
+	ffsize reset = !(nsigs & FFSIG_NORESET);
 	nsigs &= ~FFSIG_NORESET;
 
 	if (handler != NULL) {
