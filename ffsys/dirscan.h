@@ -5,6 +5,7 @@
 ffdirscan_open ffdirscan_close
 ffdirscan_next
 ffdirscan_reset
+ffdirscan_index ffdirscan_count
 */
 
 #pragma once
@@ -22,6 +23,9 @@ typedef struct ffdirscan {
 	const char *wildcard;
 	fffd fd;
 } ffdirscan;
+
+#define ffdirscan_index(ds)  ((ffuint*)((char*)(ds)->names + (ds)->index))
+#define ffdirscan_count(ds)  (((ds)->len - (ds)->index) / sizeof(ffuint))
 
 enum FFDIRSCAN_F {
 	FFDIRSCAN_NOSORT = 1, // don't sort

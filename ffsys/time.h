@@ -187,17 +187,16 @@ static inline void fftime_now(fftime *t)
 
 static inline void fftime_local(fftime_zone *tz)
 {
-	tzset();
-	tz->off = -timezone;
-	tz->have_dst = daylight;
+	TIME_ZONE_INFORMATION tzi = {};
+	int r = GetTimeZoneInformation(&tzi);
+	tz->off = -tzi.Bias * 60;
+	tz->have_dst = (tzi.DaylightBias != 0);
 
-	struct tm tm;
-	time_t gt = time(NULL);
-	gmtime_s(&tm, &gt);
-	tm.tm_isdst = -1;
-	time_t lt = mktime(&tm);
-	tz->is_dst = tm.tm_isdst;
-	tz->real_offset = gt - lt;
+	int add = (r == TIME_ZONE_ID_STANDARD) ? tzi.StandardBias
+		: (r == TIME_ZONE_ID_DAYLIGHT) ? tzi.DaylightBias
+		: 0;
+	tz->real_offset = -(tzi.Bias + add) * 60;
+	tz->is_dst = (r == TIME_ZONE_ID_DAYLIGHT);
 }
 
 #else

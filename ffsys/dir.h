@@ -85,7 +85,9 @@ static inline int ffdir_remove(const char *name)
 
 
 typedef fffd ffdir;
-typedef BY_HANDLE_FILE_INFORMATION fffileinfo;
+#ifndef fffileinfo // may be defined in ffsys/file.h
+	#define fffileinfo  BY_HANDLE_FILE_INFORMATION
+#endif
 
 typedef struct ffdirentry {
 	fffileinfo info;

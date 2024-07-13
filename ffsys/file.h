@@ -65,7 +65,9 @@ enum FFFILE_WIN_FILEATTR {
 #define FFERR_FILENOTFOUND  ERROR_FILE_NOT_FOUND
 #define FFERR_FILEEXISTS  ERROR_FILE_EXISTS
 
-typedef BY_HANDLE_FILE_INFORMATION fffileinfo;
+#ifndef fffileinfo // may be defined in ffsys/file.h
+	#define fffileinfo  BY_HANDLE_FILE_INFORMATION
+#endif
 
 static inline int fffile_info_path(const char *name, fffileinfo *fi)
 {
