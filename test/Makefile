@@ -9,34 +9,36 @@ include $(FFBASE_DIR)/conf.mk
 TEST_EXE := ffsystest$(DOTEXE)
 
 OBJ := \
-	backtrace.o \
+	test.o \
 	compat.o \
+	mem.o \
+	error.o \
+	\
+	backtrace.o \
 	dir.o \
 	dylib.o \
 	environ.o \
-	error.o \
 	file.o \
 	filemap.o \
 	kcall.o \
 	kqueue.o \
-	mem.o \
-	netconf.o \
 	path.o \
 	perf.o \
 	pipe.o \
 	process.o \
 	semaphore.o \
 	signal.o \
-	socket.o \
 	std.o \
-	test.o \
 	thread.o \
 	timer.o \
 	timerqueue.o \
-	vol.o
+	\
+	netconf.o \
+	socket.o
 # 	fileaio.o
 ifeq "$(OS)" "windows"
 	OBJ += \
+		vol.o \
 		filemon.o \
 		winreg.o
 else

@@ -157,6 +157,11 @@ static inline ffssize ffpipe_write(fffd p, const void *data, ffsize size)
 	DWORD wr;
 	if (!WriteFile(p, data, ffmin(size, 0xffffffff), &wr, 0))
 		return -1;
+
+	if (wr == 0 && size > 0) {
+		SetLastError(WSAEWOULDBLOCK);
+		return -1; // no space in the pipe buffer for the specified amount of input data
+	}
 	return wr;
 }
 
