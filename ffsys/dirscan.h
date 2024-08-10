@@ -6,6 +6,8 @@ ffdirscan_open ffdirscan_close
 ffdirscan_next
 ffdirscan_reset
 ffdirscan_index ffdirscan_count
+ffdirscanx_open ffdirscanx_close
+ffdirscanx_next
 */
 
 #pragma once
@@ -13,6 +15,7 @@ ffdirscan_index ffdirscan_count
 
 #include <ffsys/dir.h>
 #include <ffsys/path.h>
+#include <ffsys/file.h> // optional
 #include <ffbase/vector.h>
 #include <ffbase/stringz.h>
 
@@ -37,6 +40,9 @@ enum FFDIRSCAN_F {
 	/** Linux: use fd supplied by user.
 	Don't use this fd afterwards! */
 	FFDIRSCAN_USEFD = 0x20,
+
+	// FFDIRSCANX_SORT_REVERSE = 0x0100,
+	FFDIRSCANX_SORT_DIRS = 0x0200,
 };
 
 /** Compare file names */
@@ -260,3 +266,86 @@ static inline void ffdirscan_reset(ffdirscan *d)
 {
 	d->cur = d->index;
 }
+
+
+#ifdef _FFSYS_FILE_H
+
+/** Extended directory scanner. */
+typedef struct ffdirscanx {
+	ffdirscan ds;
+	ffuint flags;
+} ffdirscanx;
+
+/** Sort file names (directories first). */
+static int _ffdsx_open_cmp(const void *a, const void *b, void *udata)
+{
+	const ffdirscanx *dx = udata;
+	ffuint l = *(ffuint*)a, r = *(ffuint*)b;
+	if (!(dx->flags & FFDIRSCANX_SORT_DIRS)
+		|| (l & 0x80000000) == (r & 0x80000000)) {
+		return _ffdirscan_filename_cmpz(dx->ds.names + (l & ~0x80000000), dx->ds.names + (r & ~0x80000000));
+	}
+
+	return (l & 0x80000000) ? -1 : 1;
+}
+
+static inline void ffdirscanx_close(ffdirscanx *dx)
+{
+	ffdirscan_close(&dx->ds);
+}
+
+/** Scan directory and fetch file info. */
+static inline int ffdirscanx_open(ffdirscanx *dx, const char *path, ffuint flags)
+{
+	char *s = NULL, *s_name;
+	int rc = 1;
+	ffuint i = 0;
+
+	if (ffdirscan_open(&dx->ds, path, flags | FFDIRSCAN_NOSORT))
+		goto end;
+
+	ffstr s_path = FFSTR_INITZ(path);
+	if (!(s = ffmem_alloc(s_path.len + 1 + 255*4)))
+		goto end;
+	ffmem_copy(s, s_path.ptr, s_path.len);
+	s[s_path.len] = FFPATH_SLASH;
+	s_name = s + s_path.len + 1;
+
+	const char *fn;
+	while ((fn = ffdirscan_next(&dx->ds))) {
+		ffsz_copyz(s_name, 255*4, fn);
+
+		fffileinfo fi;
+		if (!fffile_info_path(s, &fi)) {
+			ffuint *off = (ffuint*)((char*)dx->ds.names + dx->ds.cur - sizeof(ffuint));
+			FF_ASSERT(0 == (*off & 0x80000000));
+			if (fffile_isdir(fffileinfo_attr(&fi)))
+				*off |= 0x80000000;
+		}
+		i++;
+	}
+	dx->ds.cur = dx->ds.index;
+
+	dx->flags = flags;
+	ffsort(ffdirscan_index(&dx->ds), ffdirscan_count(&dx->ds), sizeof(int), _ffdsx_open_cmp, dx);
+	rc = 0;
+
+end:
+	if (rc)
+		ffdirscanx_close(dx);
+	ffmem_free(s);
+	return rc;
+}
+
+static inline const char* ffdirscanx_next(ffdirscanx *dx)
+{
+	if (dx->ds.cur == dx->ds.len)
+		return NULL;
+
+	ffuint off = *(ffuint*)((char*)dx->ds.names + dx->ds.cur);
+	dx->ds.cur += sizeof(ffuint);
+	const char *name = (char*)dx->ds.names + (off & ~0x80000000);
+	return name;
+}
+
+#endif // _FFSYS_FILE_H

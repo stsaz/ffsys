@@ -117,17 +117,20 @@ void test_dirscan()
 			"filea",
 			"fileb",
 			"filec",
+			"zdir",
 	};
 	ffdir_make(names[0]);
 	test_chdir(names[0]);
-	for (int i = 1;  i != FF_COUNT(names);  i++) {
+	int i;
+	for (i = 1;  i != FF_COUNT(names) - 1;  i++) {
 		fffile_writewhole(names[i], "123", 3, 0);
 	}
+	ffdir_make(names[i]);
 
 // default
 	ffdirscan d = {};
 	x_sys(0 == ffdirscan_open(&d, ".", 0));
-	for (int i = 1;  ;  i++) {
+	for (i = 1;  ;  i++) {
 		if (NULL == (name = ffdirscan_next(&d))) {
 			xieq(i, FF_COUNT(names));
 			break;
@@ -148,7 +151,7 @@ void test_dirscan()
 
 // dont skip dot
 	x_sys(0 == ffdirscan_open(&d, ".", FFDIRSCAN_DOT));
-	for (int i = 1;  ;  i++) {
+	for (i = 1;  ;  i++) {
 		if (NULL == (name = ffdirscan_next(&d)))
 			break;
 		if (i == 1)
@@ -166,7 +169,7 @@ void test_dirscan()
 	x(f != FFFILE_NULL);
 	d.fd = f;
 	x_sys(0 == ffdirscan_open(&d, ".", FFDIRSCAN_USEFD));
-	for (int i = 1;  ;  i++) {
+	for (i = 1;  ;  i++) {
 		if (NULL == (name = ffdirscan_next(&d)))
 			break;
 		xsz(name, names[i]);
@@ -174,9 +177,25 @@ void test_dirscan()
 	ffdirscan_close(&d);
 #endif
 
-	for (int i = 1;  i != FF_COUNT(names);  i++) {
+// dir-first
+	ffdirscanx dx = {};
+	x_sys(!ffdirscanx_open(&dx, ".", FFDIRSCANX_SORT_DIRS));
+	x(!!(name = ffdirscanx_next(&dx)));
+	xsz(name, names[FF_COUNT(names) - 1]);
+	for (i = 1;  ;  i++) {
+		if (!(name = ffdirscanx_next(&dx))) {
+			xieq(i, FF_COUNT(names));
+			break;
+		}
+		xsz(name, names[i]);
+	}
+	ffdirscanx_close(&dx);
+
+	for (i = 1;  i != FF_COUNT(names) - 1;  i++) {
 		fffile_remove(names[i]);
 	}
+	ffdir_remove(names[i]);
+
 	test_chdir("..");
 	ffdir_remove(names[0]);
 }
