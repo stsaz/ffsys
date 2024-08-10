@@ -54,13 +54,13 @@
 	X(sig_ctrlc_noreset) \
 	X(sig_fpe) \
 	X(sig_segv) \
-	X(sig_stack) \
-	X(vol_mount) /*need admin rights*/
+	X(sig_stack)
 
 #ifdef FF_LINUX
 #define FFSYS_TESTS_MANUAL_OS(X) \
 	X(netlink)
 
 #else
-#define FFSYS_TESTS_MANUAL_OS(X)
+#define FFSYS_TESTS_MANUAL_OS(X) \
+	X(vol_mount) /*need admin rights*/
 #endif

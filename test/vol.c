@@ -8,7 +8,6 @@
 
 void test_vol_mount()
 {
-#ifdef FF_WIN
 	fffd hvol;
 	wchar_t buf[512];
 	x_sys(FFFILE_NULL != (hvol = FindFirstVolumeW((void*)buf, sizeof(buf))));
@@ -23,5 +22,4 @@ void test_vol_mount()
 	(void) ffdir_remove(dirname);
 	ffmem_free(volname);
 	FindVolumeClose(hvol);
-#endif
 }
