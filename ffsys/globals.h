@@ -31,3 +31,6 @@ char **_ff_environ;
 
 #include <ffsys/signal.h>
 ffsig_handler _ffsig_userhandler;
+#ifdef FF_WIN
+ffuint _ffsig_flags;
+#endif

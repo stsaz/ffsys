@@ -30,6 +30,8 @@ FF_EXTERN ffsig_handler _ffsig_userhandler;
 
 #ifdef FF_WIN
 
+FF_EXTERN ffuint _ffsig_flags;
+
 enum FFSIG {
 	FFSIG_INT = CONTROL_C_EXIT,
 	FFSIG_SEGV = EXCEPTION_ACCESS_VIOLATION, // The thread tried to read from or write to a virtual address for which it does not have the appropriate access
@@ -42,13 +44,19 @@ enum FFSIG {
 /** Called by OS when a CTRL event is received from console */
 static BOOL WINAPI _ffsig_ctrl_handler(DWORD ctrl)
 {
-	ffsig_handler handler = (ffsig_handler)((ffsize)_ffsig_userhandler & ~1);
+	switch (ctrl) {
+	case CTRL_C_EVENT:
+		if (!(_ffsig_flags & FFSIG_NORESET))
+			SetConsoleCtrlHandler(_ffsig_ctrl_handler, 0);
+		// fallthrough
 
-	if (ctrl == CTRL_C_EVENT) {
+	case CTRL_CLOSE_EVENT: {
 		struct ffsig_info i = {};
 		i.sig = FFSIG_INT;
-		handler(&i);
+		i.flags = ctrl;
+		_ffsig_userhandler(&i);
 		return 1;
+	}
 	}
 	return 0;
 }
@@ -56,10 +64,7 @@ static BOOL WINAPI _ffsig_ctrl_handler(DWORD ctrl)
 /** Called by OS on a program exception. */
 static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 {
-	unsigned reset = (ffsize)_ffsig_userhandler & 1;
-	ffsig_handler handler = (ffsig_handler)((ffsize)_ffsig_userhandler & ~1);
-
-	if (reset)
+	if (!(_ffsig_flags & FFSIG_NORESET))
 		SetUnhandledExceptionFilter(NULL);
 
 	struct ffsig_info i = {};
@@ -73,18 +78,17 @@ static LONG WINAPI _ffsig_exc_handler(struct _EXCEPTION_POINTERS *inf)
 		break;
 	}
 
-	handler(&i);
+	_ffsig_userhandler(&i);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
 static inline int ffsig_subscribe(ffsig_handler handler, const ffuint *sigs, ffuint nsigs)
 {
-	ffsize reset = !(nsigs & FFSIG_NORESET);
+	_ffsig_flags = (nsigs & FFSIG_NORESET);
 	nsigs &= ~FFSIG_NORESET;
 
-	if (handler != NULL) {
-		_ffsig_userhandler = (ffsig_handler)((ffsize)handler | reset);
-	}
+	if (handler != NULL)
+		_ffsig_userhandler = handler;
 
 	ffbool exc = 0;
 	for (ffuint i = 0;  i != nsigs;  i++) {
