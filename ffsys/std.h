@@ -20,6 +20,8 @@ enum FFKEY {
 	FFKEY_DOWN,
 	FFKEY_RIGHT,
 	FFKEY_LEFT,
+	FFKEY_HOME,
+	FFKEY_END,
 
 	FFKEY_CTRL = 1 << 24,
 	FFKEY_SHIFT = 2 << 24,
@@ -185,9 +187,11 @@ static inline int ffstd_keyparse(ffstr *data)
 	if (r == 0) {
 		// VK_* -> FFKEY_*
 		static const ffbyte vkeys[] = {
+			VK_END, VK_HOME,
 			VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN,
 		};
 		static const ffbyte ffkeys[] = {
+			(ffbyte)FFKEY_END, (ffbyte)FFKEY_HOME,
 			(ffbyte)FFKEY_LEFT, (ffbyte)FFKEY_UP, (ffbyte)FFKEY_RIGHT, (ffbyte)FFKEY_DOWN,
 		};
 		if ((ffuint)-1 == (r = ffarrint8_binfind(vkeys, FF_COUNT(vkeys), k->wVirtualKeyCode)))
@@ -311,8 +315,15 @@ static inline int ffstd_keyparse(ffstr *data)
 			ffstr_shift(data, i + 1);
 			return r;
 		}
+		switch (d[i]) {
+		case 'H': r |= FFKEY_HOME;  break;
+		case 'F': r |= FFKEY_END;  break;
+		default:
+			return -1;
+		}
 
-		return -1;
+		ffstr_shift(data, i + 1);
+		return r;
 	}
 
 	ffstr_shift(data, 1);
