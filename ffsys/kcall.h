@@ -7,7 +7,8 @@ ffkcallq_process_cq
 ffkcall_cancel
 fffile_open_async
 fffile_info_async
-fffile_read_async fffile_write_async fffile_writeat_async
+fffile_read_async fffile_readat_async
+fffile_write_async fffile_writeat_async
 */
 
 #pragma once
@@ -74,6 +75,7 @@ enum FFKCALL_OP {
 	FFKCALL_FILE_OPEN = 1,
 	FFKCALL_FILE_INFO,
 	FFKCALL_FILE_READ,
+	FFKCALL_FILE_READAT,
 	FFKCALL_FILE_WRITE,
 	FFKCALL_FILE_WRITEAT,
 	FFKCALL_NET_RESOLVE,
@@ -92,6 +94,10 @@ static int _ffkcall_exec(struct ffkcall *kc)
 
 	case FFKCALL_FILE_READ:
 		kc->result = fffile_read(kc->fd, kc->buf, kc->size);
+		break;
+
+	case FFKCALL_FILE_READAT:
+		kc->result = fffile_readat(kc->fd, kc->buf, kc->size, kc->offset);
 		break;
 
 	case FFKCALL_FILE_WRITE:
@@ -244,6 +250,25 @@ static inline ffssize fffile_read_async(fffd fd, void *buf, ffsize size, struct 
 	kc->buf = buf;
 	kc->size = size;
 	_ffkcall_add(kc, FFKCALL_FILE_READ);
+	return -1;
+}
+
+static inline ffssize fffile_readat_async(fffd fd, void *buf, ffsize size, ffuint64 offset, struct ffkcall *kc)
+{
+	if (kc->q == NULL)
+		return fffile_readat(fd, buf, size, offset);
+
+	if (_ffkcall_busy(kc))
+		return -1;
+
+	if (_ffkcall_complete(kc))
+		return kc->result;
+
+	kc->fd = fd;
+	kc->buf = buf;
+	kc->size = size;
+	kc->offset = offset;
+	_ffkcall_add(kc, FFKCALL_FILE_READAT);
 	return -1;
 }
 
