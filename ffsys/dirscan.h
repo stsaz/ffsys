@@ -279,11 +279,11 @@ typedef struct ffdirscanx {
 /** Sort file names (directories first). */
 static int _ffdsx_open_cmp(const void *a, const void *b, void *udata)
 {
-	const ffdirscanx *dx = udata;
+	const ffdirscanx *dx = (ffdirscanx*)udata;
 	ffuint l = *(ffuint*)a, r = *(ffuint*)b;
 	if (!(dx->flags & FFDIRSCANX_SORT_DIRS)
 		|| (l & 0x80000000) == (r & 0x80000000)) {
-		return _ffdirscan_filename_cmpz(dx->ds.names + (l & ~0x80000000), dx->ds.names + (r & ~0x80000000));
+		return _ffdirscan_filename_cmpz((char*)dx->ds.names + (l & ~0x80000000), (char*)dx->ds.names + (r & ~0x80000000));
 	}
 
 	return (l & 0x80000000) ? -1 : 1;
@@ -300,12 +300,12 @@ static inline int ffdirscanx_open(ffdirscanx *dx, const char *path, ffuint flags
 	char *s = NULL, *s_name;
 	int rc = 1;
 	ffuint i = 0;
+	ffstr s_path = FFSTR_INITZ(path);
 
 	if (ffdirscan_open(&dx->ds, path, flags | FFDIRSCAN_NOSORT))
 		goto end;
 
-	ffstr s_path = FFSTR_INITZ(path);
-	if (!(s = ffmem_alloc(s_path.len + 1 + 255*4)))
+	if (!(s = (char*)ffmem_alloc(s_path.len + 1 + 255*4)))
 		goto end;
 	ffmem_copy(s, s_path.ptr, s_path.len);
 	s[s_path.len] = FFPATH_SLASH;

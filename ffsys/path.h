@@ -321,7 +321,7 @@ static inline ffssize ffpath_normalize(char *dst, ffsize cap, const char *src, f
 
 		if (k + part.len + ((pos >= 0) ? 1 : 0) > cap)
 			return -1;
-		ffmem_copy(&dst[k], part.ptr, part.len);
+		ffmem_move(&dst[k], part.ptr, part.len);
 		k += part.len;
 
 		if (pos >= 0) {
