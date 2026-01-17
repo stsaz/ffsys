@@ -116,6 +116,12 @@ void test_path_normalize()
 #endif
 	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("c:/a/b"), FFPATH_SIMPLE | FFPATH_DISK_LETTER);
 	xseq(&s, "a/b");
+
+	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("\\\\.\\c:\\dir\\file"), FFPATH_DISK_LETTER);
+	xseq(&s, "\\\\.\\c:\\dir\\file");
+
+	s.len = ffpath_normalize(s.ptr, sizeof(buf), STR2("\\\\srv\\dir\\file"), FFPATH_DISK_LETTER);
+	xseq(&s, "\\\\srv\\dir\\file");
 }
 
 void test_path()

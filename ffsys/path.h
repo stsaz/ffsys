@@ -223,6 +223,7 @@ enum FFPATH_NORM {
 	FFPATH_SIMPLE = 0x10, // convert to a simple path: {/abc, ./abc, ../abc} -> abc
 
 	/* Handle disk drive letter, e.g. 'C:\' (default on Windows)
+	Skip all paths starting with double backslash ("\\").
 	C:/../a -> C:/a
 	C:/a -> a (FFPATH_SIMPLE) */
 	FFPATH_DISK_LETTER = 0x20,
@@ -231,21 +232,31 @@ enum FFPATH_NORM {
 
 /** Normalize file path
 flags: enum FFPATH_NORM
+
+Windows-specific path examples:
+* "c:\dir\file.txt" (DOS path)
+* "\\.\c:\dir\file.txt" (device path)
+* "\\?\c:\dir\file.txt" (device path)
+* "\\.\Volume{00000000-0000-0000-0000-000000000000}\dir\file.txt" (device path)
+* "\\localhost\c$\dir\file.txt" (UNC path)
+
 Default behaviour:
-  * split path by slash (on UNIX), by both slash and backslash (on Windows)
-    override by FFPATH_SLASH_BACKSLASH or FFPATH_SLASH_ONLY
-  * handle disk drive letter on Windows, e.g. 'C:\'
-    override by FFPATH_DISK_LETTER or FFPATH_NO_DISK_LETTER
-  * skip "." components, unless leading
-    ./a/b -> ./a/b
-    a/./b -> a/b
-  * handle ".." components
-    a/../b -> b
-    ../a/b -> ../a/b
-    ./../a -> ../a
-    /../a -> /a
-Return N of bytes written
-  <0 on error */
+* Split path by slash (on UNIX), by both slash and backslash (on Windows).
+	Override by FFPATH_SLASH_BACKSLASH or FFPATH_SLASH_ONLY.
+* Handle disk drive letter and complex paths (on Windows), e.g. "C:\" or "\\.\".
+	Override by FFPATH_DISK_LETTER or FFPATH_NO_DISK_LETTER.
+* Skip "." components, unless leading:
+	./a/b -> ./a/b
+	a/./b -> a/b
+* Handle ".." components:
+	a/../b -> b
+	../a/b -> ../a/b
+	./../a -> ../a
+	/../a -> /a
+* Merge directory separator characters:
+	a//b -> a/b
+Return N of bytes written;
+	<0 on error */
 static inline ffssize ffpath_normalize(char *dst, ffsize cap, const char *src, ffsize len, ffuint flags)
 {
 	ffsize k = 0;
@@ -262,6 +273,12 @@ static inline ffssize ffpath_normalize(char *dst, ffsize cap, const char *src, f
 		flags |= FFPATH_DISK_LETTER;
 #endif
 	int skip_disk = (flags & (FFPATH_DISK_LETTER | FFPATH_SIMPLE)) == (FFPATH_DISK_LETTER | FFPATH_SIMPLE);
+
+	if ((flags & FFPATH_DISK_LETTER)
+		&& s.len > 2
+		&& *(ffushort*)s.ptr == *(ffushort*)"\\\\") { // "\\.\", "\\?\", "\\host\"
+		goto copy;
+	}
 
 	while (s.len != 0) {
 		const char *s2 = s.ptr;
@@ -336,4 +353,11 @@ static inline ffssize ffpath_normalize(char *dst, ffsize cap, const char *src, f
 	}
 
 	return k;
+
+copy:
+	if (s.len > cap)
+		return -1;
+	if (dst != s.ptr)
+		ffmem_move(dst, s.ptr, s.len);
+	return s.len;
 }
