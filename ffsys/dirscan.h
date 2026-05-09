@@ -299,7 +299,6 @@ static inline int ffdirscanx_open(ffdirscanx *dx, const char *path, ffuint flags
 {
 	char *s = NULL, *s_name;
 	int rc = 1;
-	ffuint i = 0;
 	ffstr s_path = FFSTR_INITZ(path);
 
 	if (ffdirscan_open(&dx->ds, path, flags | FFDIRSCAN_NOSORT))
@@ -322,7 +321,6 @@ static inline int ffdirscanx_open(ffdirscanx *dx, const char *path, ffuint flags
 			if (fffile_isdir(fffileinfo_attr(&fi)))
 				*off |= 0x80000000;
 		}
-		i++;
 	}
 	dx->ds.cur = dx->ds.index;
 
