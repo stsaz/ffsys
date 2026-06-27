@@ -16,12 +16,15 @@ ffstd_attr
 
 enum FFKEY {
 	FFKEY_VIRT = 1 << 31,
+	FFKEY_ENTER,
 	FFKEY_UP,
 	FFKEY_DOWN,
 	FFKEY_RIGHT,
 	FFKEY_LEFT,
 	FFKEY_HOME,
 	FFKEY_END,
+	FFKEY_PGUP,
+	FFKEY_PGDN,
 
 	FFKEY_CTRL = 1 << 24,
 	FFKEY_SHIFT = 2 << 24,
@@ -316,6 +319,8 @@ static inline int ffstd_keyparse(ffstr *data)
 			return r;
 		}
 		switch (d[i]) {
+		case 0x35: r |= FFKEY_PGUP;  break;
+		case 0x36: r |= FFKEY_PGDN;  break;
 		case 'H': r |= FFKEY_HOME;  break;
 		case 'F': r |= FFKEY_END;  break;
 		default:
@@ -327,6 +332,9 @@ static inline int ffstd_keyparse(ffstr *data)
 	}
 
 	ffstr_shift(data, 1);
+	switch (d[0]) {
+	case '\x0d': return FFKEY_ENTER;
+	}
 	return d[0];
 }
 
