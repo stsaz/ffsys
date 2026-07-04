@@ -15,8 +15,14 @@ ffstd_attr
 #include <ffsys/string.h>
 
 enum FFKEY {
+	FFKEY_BACKSPACE = 0x08,
+	FFKEY_TAB = 0x09,
+	FFKEY_ENTER = 0x0d,
+	FFKEY_ESCAPE = 0x1b,
+
 	FFKEY_VIRT = 1 << 31,
-	FFKEY_ENTER,
+	FFKEY_DEL,
+	FFKEY_INS,
 	FFKEY_UP,
 	FFKEY_DOWN,
 	FFKEY_RIGHT,
@@ -25,6 +31,18 @@ enum FFKEY {
 	FFKEY_END,
 	FFKEY_PGUP,
 	FFKEY_PGDN,
+	FFKEY_F1,
+	FFKEY_F2,
+	FFKEY_F3,
+	FFKEY_F4,
+	FFKEY_F5,
+	FFKEY_F6,
+	FFKEY_F7,
+	FFKEY_F8,
+	FFKEY_F9,
+	FFKEY_F10,
+	FFKEY_F11,
+	FFKEY_F12,
 
 	FFKEY_CTRL = 1 << 24,
 	FFKEY_SHIFT = 2 << 24,
@@ -188,18 +206,27 @@ static inline int ffstd_keyparse(ffstr *data)
 	const KEY_EVENT_RECORD *k = (KEY_EVENT_RECORD*)data->ptr;
 	ffuint r = k->uChar.AsciiChar;
 	if (r == 0) {
-		// VK_* -> FFKEY_*
-		static const ffbyte vkeys[] = {
-			VK_END, VK_HOME,
-			VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN,
-		};
-		static const ffbyte ffkeys[] = {
-			(ffbyte)FFKEY_END, (ffbyte)FFKEY_HOME,
-			(ffbyte)FFKEY_LEFT, (ffbyte)FFKEY_UP, (ffbyte)FFKEY_RIGHT, (ffbyte)FFKEY_DOWN,
-		};
-		if ((ffuint)-1 == (r = ffarrint8_binfind(vkeys, FF_COUNT(vkeys), k->wVirtualKeyCode)))
+		if (k->wVirtualKeyCode >= VK_PRIOR && k->wVirtualKeyCode <= VK_DELETE) {
+			static const ffbyte keys_vk[] = {
+				[VK_PRIOR - VK_PRIOR]   = FFKEY_PGUP & 0xff,
+				[VK_NEXT - VK_PRIOR]    = FFKEY_PGDN & 0xff,
+				[VK_END - VK_PRIOR]     = FFKEY_END & 0xff,
+				[VK_HOME - VK_PRIOR]    = FFKEY_HOME & 0xff,
+				[VK_LEFT - VK_PRIOR]    = FFKEY_LEFT & 0xff,
+				[VK_UP - VK_PRIOR]      = FFKEY_UP & 0xff,
+				[VK_RIGHT - VK_PRIOR]   = FFKEY_RIGHT & 0xff,
+				[VK_DOWN - VK_PRIOR]    = FFKEY_DOWN & 0xff,
+				[VK_INSERT - VK_PRIOR]  = FFKEY_INS & 0xff,
+				[VK_DELETE - VK_PRIOR]  = FFKEY_DEL & 0xff,
+			};
+			r = FFKEY_VIRT | keys_vk[k->wVirtualKeyCode - VK_PRIOR];
+
+		} else if (k->wVirtualKeyCode >= VK_F1 && k->wVirtualKeyCode <= VK_F12) {
+			r = (ffuint)(k->wVirtualKeyCode - VK_F1 + FFKEY_F1);
+
+		} else {
 			return -1;
-		r = FFKEY_VIRT | ffkeys[r];
+		}
 	}
 
 	ffuint ctl = k->dwControlKeyState;
@@ -283,59 +310,154 @@ static inline int ffstd_keyread(fffd fd, ffstd_ev *ev, ffstr *data)
 	return r;
 }
 
+/* Algorithm for escape-sequences:
+1b4f:
+	32..38 -> Shift..SAC
+		50..53 -> F1..F4
+	50..53 -> F1..F4
+1b5b:
+	31:
+		35..39 -> F5..F8
+			3b:
+				32..38 -> Shift..SAC
+					7e
+			7e
+		3b:
+			32..38 -> Shift..SAC
+				41..48 -> UP..HOME
+	32:
+		30..34 -> F9..F12
+	32..36 -> INS..PGDN
+		3b:
+			32..38 -> Shift..SAC
+				7e
+		7e
+	41..48 -> UP..HOME
+*/
 static inline int ffstd_keyparse(ffstr *data)
 {
 	int r = 0, i = 0;
-	const char *d = data->ptr;
 	if (data->len == 0)
 		return -1;
-
-	if (d[0] == '\x1b' && data->len >= 3 && d[1] == '[') {
-
-		if (d[2] == '1' && data->len > 5 && d[3] == ';') {
-			ffuint m = (ffbyte)d[4];
-
-			// ESC [ 1;N
-			static const ffuint key_esc1[] = {
-				FFKEY_SHIFT /*N == 2*/,
-				FFKEY_ALT,
-				FFKEY_SHIFT | FFKEY_ALT,
-				FFKEY_CTRL,
-				FFKEY_CTRL | FFKEY_SHIFT,
-				FFKEY_CTRL | FFKEY_ALT,
-				FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT,
-			};
-
-			if (m - '2' >= FF_COUNT(key_esc1))
-				return -1;
-			r = key_esc1[m - '2'];
-			i += FFS_LEN("1;N");
-		}
-		i += 2;
-
-		if (d[i] >= 'A' && d[i] <= 'D') {
-			r |= FFKEY_UP + d[i] - 'A';
-			ffstr_shift(data, i + 1);
-			return r;
-		}
-		switch (d[i]) {
-		case 0x35: r |= FFKEY_PGUP;  break;
-		case 0x36: r |= FFKEY_PGDN;  break;
-		case 'H': r |= FFKEY_HOME;  break;
-		case 'F': r |= FFKEY_END;  break;
-		default:
-			return -1;
-		}
-
-		ffstr_shift(data, i + 1);
+	if (data->len == 1) {
+		r = data->ptr[0];
+		ffstr_shift(data, 1);
 		return r;
 	}
+	ffbyte d[8] = {};
+	ffmem_copy(d, data->ptr, ffmin(data->len, 8));
 
-	ffstr_shift(data, 1);
-	switch (d[0]) {
-	case '\x0d': return FFKEY_ENTER;
+	static const ffbyte keys_mod[] = {
+		0,
+		0,
+		(FFKEY_SHIFT) >> 24,
+		(FFKEY_ALT) >> 24,
+		(FFKEY_SHIFT | FFKEY_ALT) >> 24,
+		(FFKEY_CTRL) >> 24,
+		(FFKEY_CTRL | FFKEY_SHIFT) >> 24,
+		(FFKEY_CTRL | FFKEY_ALT) >> 24,
+		(FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT) >> 24,
+	};
+	static const ffbyte keys_f5_f8[] = {
+		[0x35 - 0x30] = FFKEY_F5 & 0xff,
+		[0x37 - 0x30] = FFKEY_F6 & 0xff,
+		[0x38 - 0x30] = FFKEY_F7 & 0xff,
+		[0x39 - 0x30] = FFKEY_F8 & 0xff,
+	};
+	static const ffbyte keys_f9_f12[] = {
+		[0x30 - 0x30] = FFKEY_F9 & 0xff,
+		[0x31 - 0x30] = FFKEY_F10 & 0xff,
+		[0x33 - 0x30] = FFKEY_F11 & 0xff,
+		[0x34 - 0x30] = FFKEY_F12 & 0xff,
+	};
+	static const ffbyte keys_3x[] = {
+		[0x32 - 0x30] = FFKEY_INS & 0xff,
+		[0x33 - 0x30] = FFKEY_DEL & 0xff,
+		[0x35 - 0x30] = FFKEY_PGUP & 0xff,
+		[0x36 - 0x30] = FFKEY_PGDN & 0xff,
+	};
+	static const ffbyte keys_4x[] = {
+		[0x41 - 0x40] = FFKEY_UP & 0xff,
+		[0x42 - 0x40] = FFKEY_DOWN & 0xff,
+		[0x43 - 0x40] = FFKEY_RIGHT & 0xff,
+		[0x44 - 0x40] = FFKEY_LEFT & 0xff,
+		[0x46 - 0x40] = FFKEY_END & 0xff,
+		[0x48 - 0x40] = FFKEY_HOME & 0xff,
+	};
+
+	if (d[0] == 0x1b && d[1] == 0x4f) {
+		i = 2;
+		if (d[2] >= 0x32 && d[2] <= 0x38) {
+			r = (ffuint)keys_mod[d[2] - 0x30] << 24;
+			i = 3;
+		}
+
+		if (d[i] >= 0x50 && d[i] <= 0x53) {
+			r |= FFKEY_F1 + d[i] - 0x50;
+			goto fin;
+		}
+
+		return -1;
+
+	} else if (d[0] == 0x1b && d[1] == 0x5b) {
+		if (d[2] == 0x31) {
+			if (d[3] >= 0x35 && d[3] <= 0x39) {
+				r = keys_f5_f8[d[3] - 0x30];
+				i = 4;
+				goto I_3b_or_7e;
+
+			} else if (d[3] == 0x3b) {
+				if (d[4] >= 0x32 && d[4] <= 0x38) {
+					r = (ffuint)keys_mod[d[4] - 0x30] << 24;
+					i = 5;
+					goto I_41_48;
+				}
+			}
+
+			return -1;
+
+		} else if (d[2] == 0x32
+			&& d[3] >= 0x30 && d[3] <= 0x34) {
+			r = keys_f9_f12[d[3] - 0x30];
+			i = 4;
+			goto I_3b_or_7e;
+
+		} else if (d[2] >= 0x32 && d[2] <= 0x36) {
+			r = keys_3x[d[2] - 0x30];
+			i = 3;
+			goto I_3b_or_7e;
+		}
+
+		i = 2;
+		goto I_41_48;
 	}
-	return d[0];
+
+I_3b_or_7e:
+	if (d[i] == 0x3b) {
+		i++;
+		if (d[i] >= 0x32 && d[i] <= 0x38) {
+			r |= (ffuint)keys_mod[d[i] - 0x30] << 24;
+			i++;
+			if (d[i] == 0x7e)
+				goto fin;
+		}
+		return -1;
+
+	} else if (d[i] == 0x7e) {
+		goto fin;
+	}
+	return -1;
+
+I_41_48:
+	if (d[i] >= 0x41 && d[i] <= 0x48) {
+		r |= keys_4x[d[i] - 0x40];
+		goto fin;
+	}
+	return -1;
+
+fin:
+	ffstr_shift(data, i + 1);
+	return (r) ? FFKEY_VIRT | r : -1;
 }
 
 
