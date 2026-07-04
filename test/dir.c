@@ -180,10 +180,10 @@ void test_dirscan()
 // dir-first
 	ffdirscanx dx = {};
 	x_sys(!ffdirscanx_open(&dx, ".", FFDIRSCANX_SORT_DIRS));
-	x(!!(name = ffdirscanx_next(&dx)));
+	x(!!(name = ffdirscanx_next(&dx, NULL)));
 	xsz(name, names[FF_COUNT(names) - 1]);
 	for (i = 1;  ;  i++) {
-		if (!(name = ffdirscanx_next(&dx))) {
+		if (!(name = ffdirscanx_next(&dx, NULL))) {
 			xieq(i, FF_COUNT(names));
 			break;
 		}

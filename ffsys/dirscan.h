@@ -335,7 +335,8 @@ end:
 	return rc;
 }
 
-static inline const char* ffdirscanx_next(ffdirscanx *dx)
+/** Get next file name */
+static inline const char* ffdirscanx_next(ffdirscanx *dx, uint *isdir)
 {
 	if (dx->ds.cur == dx->ds.len)
 		return NULL;
@@ -343,7 +344,21 @@ static inline const char* ffdirscanx_next(ffdirscanx *dx)
 	ffuint off = *(ffuint*)((char*)dx->ds.names + dx->ds.cur);
 	dx->ds.cur += sizeof(ffuint);
 	const char *name = (char*)dx->ds.names + (off & ~0x80000000);
+	if (isdir)
+		*isdir = !!(off & 0x80000000);
 	return name;
+}
+
+/** Get file name at index */
+static inline const char* ffdirscanx_at(ffdirscanx *dx, uint i, uint *isdir)
+{
+	i = dx->ds.index + i * sizeof(int);
+	if (i == dx->ds.len)
+		return NULL;
+	ffuint off = *(ffuint*)((char*)dx->ds.names + i);
+	if (isdir)
+		*isdir = !!(off & 0x80000000);
+	return (char*)dx->ds.names + (off & ~0x80000000);
 }
 
 #endif // _FFSYS_FILE_H
