@@ -208,16 +208,20 @@ static inline int ffstd_keyparse(ffstr *data)
 	if (r == 0) {
 		if (k->wVirtualKeyCode >= VK_PRIOR && k->wVirtualKeyCode <= VK_DELETE) {
 			static const ffbyte keys_vk[] = {
-				[VK_PRIOR - VK_PRIOR]   = FFKEY_PGUP & 0xff,
-				[VK_NEXT - VK_PRIOR]    = FFKEY_PGDN & 0xff,
-				[VK_END - VK_PRIOR]     = FFKEY_END & 0xff,
-				[VK_HOME - VK_PRIOR]    = FFKEY_HOME & 0xff,
-				[VK_LEFT - VK_PRIOR]    = FFKEY_LEFT & 0xff,
-				[VK_UP - VK_PRIOR]      = FFKEY_UP & 0xff,
-				[VK_RIGHT - VK_PRIOR]   = FFKEY_RIGHT & 0xff,
-				[VK_DOWN - VK_PRIOR]    = FFKEY_DOWN & 0xff,
-				[VK_INSERT - VK_PRIOR]  = FFKEY_INS & 0xff,
-				[VK_DELETE - VK_PRIOR]  = FFKEY_DEL & 0xff,
+				FFKEY_PGUP & 0xff,	// VK_PRIOR
+				FFKEY_PGDN & 0xff,	// VK_NEXT
+				FFKEY_END & 0xff,	// VK_END
+				FFKEY_HOME & 0xff,	// VK_HOME
+				FFKEY_LEFT & 0xff,	// VK_LEFT
+				FFKEY_UP & 0xff,	// VK_UP
+				FFKEY_RIGHT & 0xff,	// VK_RIGHT
+				FFKEY_DOWN & 0xff,	// VK_DOWN
+				0,
+				0,
+				0,
+				0,
+				FFKEY_INS & 0xff,	// VK_INSERT
+				FFKEY_DEL & 0xff,	// VK_DELETE
 			};
 			r = FFKEY_VIRT | keys_vk[k->wVirtualKeyCode - VK_PRIOR];
 
@@ -359,30 +363,43 @@ static inline int ffstd_keyparse(ffstr *data)
 		(FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT) >> 24,
 	};
 	static const ffbyte keys_f5_f8[] = {
-		[0x35 - 0x30] = FFKEY_F5 & 0xff,
-		[0x37 - 0x30] = FFKEY_F6 & 0xff,
-		[0x38 - 0x30] = FFKEY_F7 & 0xff,
-		[0x39 - 0x30] = FFKEY_F8 & 0xff,
+		0,
+		0,
+		0,
+		0,
+		0,
+		FFKEY_F5 & 0xff,
+		0,
+		FFKEY_F6 & 0xff,
+		FFKEY_F7 & 0xff,
+		FFKEY_F8 & 0xff,
 	};
 	static const ffbyte keys_f9_f12[] = {
-		[0x30 - 0x30] = FFKEY_F9 & 0xff,
-		[0x31 - 0x30] = FFKEY_F10 & 0xff,
-		[0x33 - 0x30] = FFKEY_F11 & 0xff,
-		[0x34 - 0x30] = FFKEY_F12 & 0xff,
+		FFKEY_F9 & 0xff,
+		FFKEY_F10 & 0xff,
+		0,
+		FFKEY_F11 & 0xff,
+		FFKEY_F12 & 0xff,
 	};
 	static const ffbyte keys_3x[] = {
-		[0x32 - 0x30] = FFKEY_INS & 0xff,
-		[0x33 - 0x30] = FFKEY_DEL & 0xff,
-		[0x35 - 0x30] = FFKEY_PGUP & 0xff,
-		[0x36 - 0x30] = FFKEY_PGDN & 0xff,
+		0,
+		0,
+		FFKEY_INS & 0xff,
+		FFKEY_DEL & 0xff,
+		0,
+		FFKEY_PGUP & 0xff,
+		FFKEY_PGDN & 0xff,
 	};
 	static const ffbyte keys_4x[] = {
-		[0x41 - 0x40] = FFKEY_UP & 0xff,
-		[0x42 - 0x40] = FFKEY_DOWN & 0xff,
-		[0x43 - 0x40] = FFKEY_RIGHT & 0xff,
-		[0x44 - 0x40] = FFKEY_LEFT & 0xff,
-		[0x46 - 0x40] = FFKEY_END & 0xff,
-		[0x48 - 0x40] = FFKEY_HOME & 0xff,
+		0,
+		FFKEY_UP & 0xff,
+		FFKEY_DOWN & 0xff,
+		FFKEY_RIGHT & 0xff,
+		FFKEY_LEFT & 0xff,
+		0,
+		FFKEY_END & 0xff,
+		0,
+		FFKEY_HOME & 0xff,
 	};
 
 	if (d[0] == 0x1b && d[1] == 0x4f) {
