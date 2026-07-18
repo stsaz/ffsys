@@ -566,3 +566,13 @@ attr: enum FFSTD_ATTR
 val: enum FFSTD_ATTR
 Return !=0 on error */
 static int ffstd_attr(fffd fd, ffuint attr, ffuint val);
+
+/** Set window title. */
+static inline void ffstd_title(const char *title, ffsize len)
+{
+	char buf[5 + 255];
+	len = ffmin(len, 255);
+	int n = ffs_format(buf, sizeof(buf), "\x1b]0;%*s\x07", len, title);
+	FF_ASSERT(n > 0);
+	ffstdout_write(buf, n);
+}
