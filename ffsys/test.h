@@ -69,6 +69,13 @@ static inline void test_check(int ok, const char *file, ffuint line, const char 
 	test_check(ffsz_eq(sz1, sz2), __FILE__, __LINE__, __func__, "'%s' != '%s'", sz1, sz2); \
 })
 
+#define xstrn(expect, s, len) \
+({ \
+	ssize_t __len = len; \
+	test_check(__len >= 0 && !ffs_cmpz(s, __len, expect), __FILE__, __LINE__, __func__, "'%*s' != '%s'" \
+		, (__len >= 0) ? __len : (size_t)0, s, expect); \
+})
+
 /** Expect TRUE or die with system error */
 #define x_sys(expr) \
 ({ \
