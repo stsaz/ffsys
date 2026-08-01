@@ -6,21 +6,39 @@ ffstdin_read
 ffstdout_write ffstderr_write
 ffstdout_fmt ffstderr_fmt
 fflog fflogz
-ffstd_keyread
-ffstd_keyparse
+ffstd_key_read
+ffstd_key_parse
 ffstd_attr
+ffstd_paste_ctl ffstd_paste_read
 */
 
 #pragma once
 #include <ffsys/string.h>
+#include <ffbase/unicode.h>
 
+/** Terminal key code.
+Up to 4-byte UTF-8 character or virtual key with optional modifiers.
+Examples (uint32 little-endian):
+	Byte3     Byte2     Byte1     Byte0
+* Virtual key:
+	0000VASC  00000000  00000000  0000xxxx
+* UTF-8:
+	00000ASC  00000000  00000000  0xxxxxxx
+	00000ASC  00000000  10xxxxxx  110xxxxx
+	00000ASC  10xxxxxx  10xxxxxx  1110xxxx
+	10xxxxxx  10xxxxxx  10xxxxxx  11110xxx
+Modifiers:
+	* A=Alt
+	* S=Shift
+	* C=Ctrl
+*/
 enum FFKEY {
 	FFKEY_BACKSPACE = 0x08,
 	FFKEY_TAB = 0x09,
 	FFKEY_ENTER = 0x0d,
 	FFKEY_ESCAPE = 0x1b,
 
-	FFKEY_VIRT = 1 << 31,
+	FFKEY_VIRT = 0x08000000,
 	FFKEY_DEL,
 	FFKEY_INS,
 	FFKEY_UP,
@@ -43,10 +61,11 @@ enum FFKEY {
 	FFKEY_F10,
 	FFKEY_F11,
 	FFKEY_F12,
+	FFKEY_TEXT_PASTED,
 
-	FFKEY_CTRL = 1 << 24,
-	FFKEY_SHIFT = 2 << 24,
-	FFKEY_ALT = 4 << 24,
+	FFKEY_CTRL = 0x01000000,
+	FFKEY_SHIFT = 0x02000000,
+	FFKEY_ALT = 0x04000000,
 	FFKEY_MODMASK = FFKEY_CTRL | FFKEY_SHIFT | FFKEY_ALT,
 };
 
@@ -152,58 +171,28 @@ static inline ffssize ffstderr_write(const void *data, ffsize len)
 	return _ffstd_write(GetStdHandle(STD_ERROR_HANDLE), data, len);
 }
 
-typedef struct ffstd_ev {
-	ffuint state;
-	INPUT_RECORD rec[8];
-	ffuint irec, nrec;
-} ffstd_ev;
-
-static inline int ffstd_keyread(fffd fd, ffstd_ev *ev, ffstr *data)
+static inline int ffstd_key_read(fffd fd, char *buf, ffsize cap)
 {
-	for (;;) {
-		switch (ev->state) {
-
-		case 0: {
-			DWORD n;
-			if (!GetNumberOfConsoleInputEvents(fd, &n))
-				return -1;
-			if (n == 0)
-				return 0;
-
-			if (!ReadConsoleInput(fd, ev->rec, ffmin(n, FF_COUNT(ev->rec)), &n))
-				return -1;
-			if (n == 0)
-				return 0;
-			ev->nrec = n;
-			ev->irec = 0;
-			ev->state = 1;
-		}
-		// fallthrough
-
-		case 1:
-			if (ev->irec == ev->nrec) {
-				ev->state = 0;
-				continue;
-			}
-
-			if (!(ev->rec[ev->irec].EventType == KEY_EVENT && ev->rec[ev->irec].Event.KeyEvent.bKeyDown)) {
-				ev->irec++;
-				continue;
-			}
-
-			ffstr_set(data, (void*)&ev->rec[ev->irec].Event.KeyEvent, sizeof(ev->rec[ev->irec].Event.KeyEvent));
-			ev->irec++;
-			return data->len;
-		}
-	}
+	DWORD n;
+	if (!GetNumberOfConsoleInputEvents(fd, &n))
+		return -1;
+	if (n == 0)
+		return 0;
+	if (!ReadConsoleInput(fd, (INPUT_RECORD*)buf, cap / sizeof(INPUT_RECORD), &n))
+		return -1;
+	return n * sizeof(INPUT_RECORD);
 }
 
-static inline int ffstd_keyparse(ffstr *data)
+static inline int ffstd_key_parse_win(const char *data, ffsize len, ffuint *read)
 {
-	if (data->len < sizeof(KEY_EVENT_RECORD))
-		return -1;
+	if (len < sizeof(INPUT_RECORD))
+		return 0;
+	const INPUT_RECORD *ir = (INPUT_RECORD*)data;
+	*read = sizeof(INPUT_RECORD);
+	if (!(ir->EventType == KEY_EVENT && ir->Event.KeyEvent.bKeyDown))
+		return FFKEY_VIRT;
 
-	const KEY_EVENT_RECORD *k = (KEY_EVENT_RECORD*)data->ptr;
+	const KEY_EVENT_RECORD *k = (KEY_EVENT_RECORD*)&ir->Event.KeyEvent;
 	ffuint r = k->uChar.AsciiChar;
 	if (r == 0) {
 		if (k->wVirtualKeyCode >= VK_PRIOR && k->wVirtualKeyCode <= VK_DELETE) {
@@ -238,10 +227,9 @@ static inline int ffstd_keyparse(ffstr *data)
 		r |= FFKEY_ALT;
 	if (ctl & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
 		r |= FFKEY_CTRL;
-	if (ctl & SHIFT_PRESSED)
+	if ((ctl & SHIFT_PRESSED) && !k->uChar.AsciiChar)
 		r |= FFKEY_SHIFT;
 
-	data->len = 0;
 	return r;
 }
 
@@ -272,6 +260,17 @@ static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 	return !SetConsoleMode(fd, mode);
 }
 
+static inline void ffstd_paste_ctl(ffuint enable)
+{
+	(void)enable;
+}
+
+static inline ffuint ffstd_paste_read(const char *d, ffsize len, ffstr *text)
+{
+	(void)d, (void)len, (void)text;
+	return 0;
+}
+
 #else // UNIX:
 
 #include <ffsys/error.h>
@@ -297,22 +296,74 @@ static inline ffssize ffstderr_write(const void *data, ffsize len)
 	return write(2, data, len);
 }
 
-typedef struct ffstd_ev {
-	char buf[8];
-} ffstd_ev;
-
-static inline int ffstd_keyread(fffd fd, ffstd_ev *ev, ffstr *data)
+static inline int ffstd_key_read(fffd fd, char *buf, ffsize cap)
 {
-	ffssize r = read(fd, ev->buf, sizeof(ev->buf));
+	ffssize r = read(fd, buf, cap);
 	if (r < 0 && fferr_again(errno))
 		return 0;
 	else if (r == 0) {
 		errno = EINVAL;
 		return -1;
 	}
-	ffstr_set(data, ev->buf, r);
 	return r;
 }
+
+static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
+{
+	if (attr == FFSTD_VTERM) {
+		struct stat st;
+		return !(!fstat(fd, &st)
+			&& (st.st_mode & S_IFMT) == S_IFCHR);
+	}
+
+	struct termios t;
+	if (0 != tcgetattr(fd, &t))
+		return -1;
+
+	if (attr & FFSTD_ECHO) {
+		if (val & FFSTD_ECHO)
+			t.c_lflag |= ECHO;
+		else
+			t.c_lflag &= ~ECHO;
+	}
+
+	if (attr & FFSTD_LINEINPUT) {
+		if (val & FFSTD_LINEINPUT) {
+			t.c_lflag |= ICANON;
+		} else {
+			t.c_lflag &= ~ICANON;
+			t.c_cc[VTIME] = 0;
+			t.c_cc[VMIN] = 1;
+		}
+	}
+
+	tcsetattr(fd, TCSANOW, &t);
+	return 0;
+}
+
+static inline void ffstd_paste_ctl(ffuint enable)
+{
+	ffstdout_write((enable) ? "\x1b[?2004h" : "\x1b[?2004l", 8);
+}
+
+/**
+Return N of bytes read;
+  0 on error */
+static inline ffuint ffstd_paste_read(const char *d, ffsize len, ffstr *text)
+{
+	ffssize r = ffs_findstr(d, len, "\x1b[201~", 6);
+	if (r >= 0 && r < 6)
+		return 0; // Incorrect usage
+	text->ptr = (char*)d + 6;
+	if (r < 0) {
+		text->len = len - 6;
+		return 0;
+	}
+	text->len = r - 6;
+	return r + 6;
+}
+
+#endif
 
 /* Algorithm for escape-sequences:
 1b4f:
@@ -330,26 +381,40 @@ static inline int ffstd_keyread(fffd fd, ffstd_ev *ev, ffstr *data)
 			32..38 -> Shift..SAC
 				41..48 -> UP..HOME
 	32:
+		3030..3031 -> paste start/end
+			7e
 		30..34 -> F9..F12
+			3b:
+				32..38 -> Shift..SAC
+					7e
+			7e
 	32..36 -> INS..PGDN
 		3b:
 			32..38 -> Shift..SAC
 				7e
 		7e
 	41..48 -> UP..HOME
+1b:
+	XX|XXXX|XXXXXX -> Alt+key
 */
-static inline int ffstd_keyparse(ffstr *data)
+static inline int ffstd_key_parse_unix(const char *data, ffsize len, ffuint *read)
 {
 	int r = 0, i = 0;
-	if (data->len == 0)
-		return -1;
-	if (data->len == 1) {
-		r = data->ptr[0];
-		ffstr_shift(data, 1);
-		return r;
+	if (len == 0)
+		return 0;
+	if (data[0] != 0x1b) {
+		r = ffutf8_decode(data, len, (ffuint*)&i);
+		if (r < 0)
+			return 0;
+		else if (r == 0 || r > 4)
+			return -1;
+		*read = r;
+		ffmem_copy(&i, data, r);
+		return i;
 	}
+
 	ffbyte d[8] = {};
-	ffmem_copy(d, data->ptr, ffmin(data->len, 8));
+	ffmem_copy(d, data, ffmin(len, 8));
 
 	static const ffbyte keys_mod[] = {
 		0,
@@ -433,6 +498,12 @@ static inline int ffstd_keyparse(ffstr *data)
 
 			return -1;
 
+		} else if (d[2] == 0x32 && d[3] == 0x30
+			&& (d[4] == 0x30 || d[4] == 0x31)
+			&& d[5] == 0x7e) {
+			*read = 6;
+			return FFKEY_TEXT_PASTED;
+
 		} else if (d[2] == 0x32
 			&& d[3] >= 0x30 && d[3] <= 0x34) {
 			r = keys_f9_f12[d[3] - 0x30];
@@ -447,6 +518,19 @@ static inline int ffstd_keyparse(ffstr *data)
 
 		i = 2;
 		goto I_41_48;
+
+	} else if (d[0] == 0x1b) {
+		r = ffutf8_decode(data + 1, len - 1, (ffuint*)&i);
+		if (r < 0)
+			return 0;
+		else if (r == 0 || r > 3)
+			return -1;
+		*read = 1 + r;
+		ffmem_copy(&i, data + 1, r);
+		return FFKEY_ALT | i;
+
+	} else {
+		return -1;
 	}
 
 I_3b_or_7e:
@@ -473,46 +557,9 @@ I_41_48:
 	return -1;
 
 fin:
-	ffstr_shift(data, i + 1);
+	*read = i + 1;
 	return (r) ? FFKEY_VIRT | r : -1;
 }
-
-
-static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
-{
-	if (attr == FFSTD_VTERM) {
-		struct stat st;
-		return !(!fstat(fd, &st)
-			&& (st.st_mode & S_IFMT) == S_IFCHR);
-	}
-
-	struct termios t;
-	if (0 != tcgetattr(fd, &t))
-		return -1;
-
-	if (attr & FFSTD_ECHO) {
-		if (val & FFSTD_ECHO)
-			t.c_lflag |= ECHO;
-		else
-			t.c_lflag &= ~ECHO;
-	}
-
-	if (attr & FFSTD_LINEINPUT) {
-		if (val & FFSTD_LINEINPUT) {
-			t.c_lflag |= ICANON;
-		} else {
-			t.c_lflag &= ~ICANON;
-			t.c_cc[VTIME] = 0;
-			t.c_cc[VMIN] = 1;
-		}
-	}
-
-	tcsetattr(fd, TCSANOW, &t);
-	return 0;
-}
-
-#endif
-
 
 /** Read from stdin.
 Windows: 'cap' must be >=4.
@@ -565,17 +612,26 @@ static inline ffssize ffstderr_fmt(const char *fmt, ...)
 
 /** Read keyboard event from terminal
 fd: usually ffstdin
-ev: initialize to {} on very first use
-data: the data read from stdin
+data: the output data read from stdin
 Return N of bytes read on success
   0 if queue is empty
   <0 on error */
-static int ffstd_keyread(fffd fd, ffstd_ev *ev, ffstr *data);
+static int ffstd_key_read(fffd fd, char *buf, ffsize cap);
 
 /** Parse key received from terminal
-Return enum FFKEY;  'data' is shifted by the number of bytes processed
-  <0 on error */
-static int ffstd_keyparse(ffstr *data);
+len: data length
+read: N of bytes read
+Windows: return FFKEY_VIRT for unhandled events (should be skipped or handled by user code).
+Return enum FFKEY;
+  0 if not enough data;
+  -1 on error */
+static inline int ffstd_key_parse(const char *data, ffsize len, ffuint *read)
+{
+#ifdef FF_WIN
+	return ffstd_key_parse_win(data, len, read);
+#endif
+	return ffstd_key_parse_unix(data, len, read);
+}
 
 
 /** Set attribute on a terminal
