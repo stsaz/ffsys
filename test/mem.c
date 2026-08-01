@@ -10,7 +10,11 @@ static int test_str()
 {
 	char su[1024];
 
-	fferr_set(EINVAL);
+#ifdef FF_WIN
+	fferr_set(ERROR_FILE_EXISTS);
+#else
+	fferr_set(EEXIST);
+#endif
 	x(0 == fferr_str(fferr_last(), su, FF_COUNT(su)));
 
 #ifdef FF_WIN

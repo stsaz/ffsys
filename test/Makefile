@@ -56,7 +56,7 @@ default: $(TEST_EXE)
 clean:
 	$(RM) $(TEST_EXE) $(OBJ)
 
-CFLAGS := -MMD -MP \
+CFLAGS += -MMD -MP \
 	-I$(FFSYS_DIR) -I$(FFBASE_DIR) \
 	-Wall -Wextra -Wno-array-bounds -fno-strict-aliasing \
 	-DFFBASE_HAVE_FFERR_STR -DFF_DEBUG -g

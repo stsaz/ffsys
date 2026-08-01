@@ -336,7 +336,7 @@ end:
 }
 
 /** Get next file name */
-static inline const char* ffdirscanx_next(ffdirscanx *dx, uint *isdir)
+static inline const char* ffdirscanx_next(ffdirscanx *dx, ffuint *isdir)
 {
 	if (dx->ds.cur == dx->ds.len)
 		return NULL;
@@ -350,7 +350,7 @@ static inline const char* ffdirscanx_next(ffdirscanx *dx, uint *isdir)
 }
 
 /** Get file name at index */
-static inline const char* ffdirscanx_at(ffdirscanx *dx, uint i, uint *isdir)
+static inline const char* ffdirscanx_at(ffdirscanx *dx, ffuint i, ffuint *isdir)
 {
 	i = dx->ds.index + i * sizeof(int);
 	if (i == dx->ds.len)
