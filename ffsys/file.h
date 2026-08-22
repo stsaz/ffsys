@@ -526,7 +526,7 @@ static inline int fffile_set_mtime_path(const char *name, const fftime *last_wri
 
 static inline int fffile_set_mtime(fffd fd, const fftime *last_write)
 {
-#if defined FF_LINUX && !defined FF_ANDROID
+#if (defined FF_LINUX && !defined FF_ANDROID) || defined FF_APPLE
 	struct timespec ts[2];
 	ts[0] = fftime_to_timespec(last_write);
 	ts[1] = fftime_to_timespec(last_write);

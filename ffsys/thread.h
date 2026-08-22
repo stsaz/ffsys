@@ -101,6 +101,11 @@ static inline ffuint64 ffthread_curid()
 	#include <pthread_np.h>
 	typedef cpuset_t ffthread_cpumask;
 
+#else
+	typedef struct ffthread_cpumask ffthread_cpumask;
+	struct ffthread_cpumask {
+		ffsize value;
+	};
 #endif
 
 typedef pthread_t ffthread;
@@ -223,12 +228,14 @@ static inline int ffthread_detach(ffthread t)
 
 static inline void ffthread_cpumask_set(ffthread_cpumask *mask, ffuint i)
 {
+#ifndef FF_APPLE
 	CPU_SET(i, mask);
+#endif
 }
 
 static inline int ffthread_affinity(ffthread t, const ffthread_cpumask *mask)
 {
-#ifdef FF_ANDROID
+#if defined FF_ANDROID || defined FF_APPLE
 	errno = ENOSYS;
 	return -1;
 

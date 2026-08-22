@@ -270,7 +270,11 @@ typedef int ffps;
 
 static inline ffps ffps_exec_info(const char *filename, ffps_execinfo *info)
 {
+#ifdef FF_APPLE
+	pid_t p = fork();
+#else
 	pid_t p = vfork();
+#endif
 	if (p != 0)
 		return p;
 
