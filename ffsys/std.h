@@ -2,6 +2,7 @@
 2020, Simon Zolin */
 
 /*
+ffstd_info
 ffstdin_read
 ffstdout_write ffstderr_write
 ffstdout_fmt ffstderr_fmt
@@ -75,6 +76,17 @@ enum FFSTD_ATTR {
 	FFSTD_VTERM = 4, // Windows: enable control character sequences
 };
 
+enum FFSTD_INFO {
+	FFSTD_IN_ECHO = 1,
+	FFSTD_IN_LINEINPUT = 2,
+
+	FFSTD_OUT_VTERM = 1,
+};
+
+struct ffstd_info {
+	ffuint input, output; // enum FFSTD_INFO
+};
+
 
 #define FFSTD_BLACK  "0"
 #define FFSTD_RED  "1"
@@ -103,6 +115,17 @@ enum FFSTD_ATTR {
 #ifdef FF_WIN
 
 #include <ffbase/slice.h>
+
+static inline int ffstd_info(fffd fd, struct ffstd_info *i)
+{
+	DWORD m;
+	if (!GetConsoleMode(fd, &m))
+		return -1;
+	i->input = (m & ENABLE_ECHO_INPUT) ? FFSTD_IN_ECHO : 0;
+	i->input |= (m & ENABLE_LINE_INPUT) ? FFSTD_IN_LINEINPUT : 0;
+	i->output = (m & ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? FFSTD_OUT_VTERM : 0;
+	return 0;
+}
 
 #define ffstdin  GetStdHandle(STD_INPUT_HANDLE)
 #define ffstdout  GetStdHandle(STD_OUTPUT_HANDLE)
@@ -308,14 +331,19 @@ static inline int ffstd_key_read(fffd fd, char *buf, ffsize cap)
 	return r;
 }
 
+static inline int ffstd_info(fffd fd, struct ffstd_info *i)
+{
+	struct termios t;
+	if (tcgetattr(fd, &t))
+		return -1;
+	i->input = (t.c_lflag & ECHO) ? FFSTD_IN_ECHO : 0;
+	i->input |= (t.c_lflag & ICANON) ? FFSTD_IN_LINEINPUT : 0;
+	i->output = FFSTD_OUT_VTERM;
+	return 0;
+}
+
 static inline int ffstd_attr(fffd fd, ffuint attr, ffuint val)
 {
-	if (attr == FFSTD_VTERM) {
-		struct stat st;
-		return !(!fstat(fd, &st)
-			&& (st.st_mode & S_IFMT) == S_IFCHR);
-	}
-
 	struct termios t;
 	if (0 != tcgetattr(fd, &t))
 		return -1;
@@ -364,6 +392,10 @@ static inline ffuint ffstd_paste_read(const char *d, ffsize len, ffstr *text)
 }
 
 #endif
+
+/** Get attributes of a terminal descriptor.
+Return !=0 on error (fd is not a terminal) */
+static int ffstd_info(fffd fd, struct ffstd_info *i);
 
 /* Algorithm for escape-sequences:
 1b4f:
