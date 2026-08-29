@@ -35,6 +35,7 @@ struct ffkcallqueue {
 	ffsem sem; // triggerred on sq submit to wake sq reader thread (optional)
 
 	ffringqueue *cq; // completion queue
+	ffkq kq; // KQ the `kqpost` descriptor is attached to
 	ffkq_postevent kqpost; // triggerred on cq submit to wake cq reader thread (optional)
 	void *kqpost_data;
 };
@@ -144,7 +145,7 @@ static inline ffuint ffkcallq_process_sq(ffringqueue *sq)
 		}
 
 		if (used == 0 && kc->q->kqpost != FFKQ_NULL) {
-			if (ff_unlikely(0 != ffkq_post(kc->q->kqpost, kc->q->kqpost_data)))
+			if (ff_unlikely(0 != ffkq_post(kc->q->kq, kc->q->kqpost, kc->q->kqpost_data)))
 				assert(0);
 		}
 	}

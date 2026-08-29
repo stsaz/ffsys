@@ -50,7 +50,7 @@ static void __stdcall _fftimer_onfire(LPVOID arg, DWORD dwTimerLowValue, DWORD d
 	(void)dwTimerLowValue; (void)dwTimerHighValue;
 	_fftimer *tmr = (_fftimer*)arg;
 	ffkq_postevent post = ffkq_post_attach(tmr->kq, tmr->data);
-	int r = ffkq_post(post, tmr->data);
+	int r = ffkq_post(tmr->kq, post, tmr->data);
 	(void)r;
 	FF_ASSERT(r == 0);
 }

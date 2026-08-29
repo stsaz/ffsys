@@ -29,6 +29,11 @@ char **_ff_environ;
 
 #endif
 
+#if defined FF_APPLE || defined FF_BSD
+#include <ffsys/queue.h>
+int _ffkq_post_id;
+#endif
+
 #include <ffsys/signal.h>
 ffsig_handler _ffsig_userhandler;
 #ifdef FF_WIN

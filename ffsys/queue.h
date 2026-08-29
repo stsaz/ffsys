@@ -117,20 +117,21 @@ static inline ffkq_postevent ffkq_post_attach(ffkq kq, void *data)
 	return kq;
 }
 
-static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
+static inline void ffkq_post_detach(ffkq kq, ffkq_postevent post)
 {
-	(void)post; (void)kq;
+	(void)kq; (void)post;
 }
 
-static inline int ffkq_post(ffkq_postevent post, void *data)
+static inline int ffkq_post(ffkq kq, ffkq_postevent post, void *data)
 {
-	ffkq kq = post;
-	return !PostQueuedCompletionStatus(kq, 0, (ULONG_PTR)data, NULL);
+	(void)kq;
+	FF_ASSERT(kq == post);
+	return !PostQueuedCompletionStatus(post, 0, (ULONG_PTR)data, NULL);
 }
 
-static inline void ffkq_post_consume(ffkq_postevent post)
+static inline void ffkq_post_consume(ffkq kq, ffkq_postevent post)
 {
-	(void)post;
+	(void)kq; (void)post;
 }
 
 #else // UNIX:
@@ -209,7 +210,7 @@ static inline ffkq_postevent ffkq_post_attach(ffkq kq, void *data)
 	return post;
 }
 
-static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
+static inline void ffkq_post_detach(ffkq kq, ffkq_postevent post)
 {
 	if (post == FFKQ_NULL) return;
 
@@ -217,17 +218,18 @@ static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
 	close(post);
 }
 
-static inline int ffkq_post(ffkq_postevent post, void *data)
+static inline int ffkq_post(ffkq kq, ffkq_postevent post, void *data)
 {
-	(void)data;
+	(void)kq; (void)data;
 	ffuint64 val = 1;
 	if (sizeof(ffuint64) != write(post, &val, sizeof(ffuint64)))
 		return -1;
 	return 0;
 }
 
-static inline void ffkq_post_consume(ffkq_postevent post)
+static inline void ffkq_post_consume(ffkq kq, ffkq_postevent post)
 {
+	(void)kq;
 	for (;;) {
 		ffuint64 val;
 		int r = read(post, &val, sizeof(ffuint64));
@@ -238,11 +240,13 @@ static inline void ffkq_post_consume(ffkq_postevent post)
 
 #else // BSD/macOS:
 
+#include <ffbase/atomic.h>
 #include <sys/event.h>
 
 typedef struct kevent ffkq_event;
 typedef struct timespec ffkq_time;
-#define _FFKQ_POST_ID  1
+
+int _ffkq_post_id;
 
 static inline ffkq ffkq_create()
 {
@@ -305,35 +309,33 @@ static inline void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev)
 static inline ffkq_postevent ffkq_post_attach(ffkq kq, void *data)
 {
 	(void)data;
+	int id = ffint_fetch_add(&_ffkq_post_id, 1) + 1;
 	struct kevent ev;
-	EV_SET(&ev, _FFKQ_POST_ID, EVFILT_USER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	EV_SET(&ev, id, EVFILT_USER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 	if (0 != kevent(kq, &ev, 1, NULL, 0, NULL))
 		return FFKQ_NULL;
-	return kq;
+	return id;
 }
 
-static inline void ffkq_post_detach(ffkq_postevent post, ffkq kq)
+static inline void ffkq_post_detach(ffkq kq, ffkq_postevent post)
 {
 	if (post == FFKQ_NULL) return;
 
-	FF_ASSERT(post == kq);
-	(void)post;
 	struct kevent ev;
-	EV_SET(&ev, _FFKQ_POST_ID, EVFILT_USER, EV_DELETE, 0, 0, NULL);
+	EV_SET(&ev, post, EVFILT_USER, EV_DELETE, 0, 0, NULL);
 	kevent(kq, &ev, 1, NULL, 0, NULL);
 }
 
-static inline int ffkq_post(ffkq_postevent post, void *data)
+static inline int ffkq_post(ffkq kq, ffkq_postevent post, void *data)
 {
-	ffkq kq = post;
 	struct kevent ev;
-	EV_SET(&ev, _FFKQ_POST_ID, EVFILT_USER, 0, NOTE_TRIGGER, 0, data);
+	EV_SET(&ev, post, EVFILT_USER, 0, NOTE_TRIGGER, 0, data);
 	return kevent(kq, &ev, 1, NULL, 0, NULL);
 }
 
-static inline void ffkq_post_consume(ffkq_postevent post)
+static inline void ffkq_post_consume(ffkq kq, ffkq_postevent post)
 {
-	(void)post;
+	(void)kq; (void)post;
 }
 
 #endif // #ifdef FF_LINUX
@@ -384,18 +386,17 @@ static void ffkq_task_event_assign(ffkq_task *task, ffkq_event *ev);
 
 
 /** Attach user event to kqueue
-BSD/macOS: only one user event per kqueue is supported
 Return FFKQ_NULL on error */
 static ffkq_postevent ffkq_post_attach(ffkq kq, void *data);
 
 /** Detach user event from kqueue */
-static void ffkq_post_detach(ffkq_postevent post, ffkq kq);
+static void ffkq_post_detach(ffkq kq, ffkq_postevent post);
 
 /** Trigger user event
 data: must be the same value as was used for ffkq_post_attach()
   Linux: this value is NOT what ffkq_event_data() will return (see ffkq_post()/ffkq_post_consume())
 UNIX: several ffkq_post() calls trigger kqueue event only once */
-static int ffkq_post(ffkq_postevent post, void *data);
+static int ffkq_post(ffkq kq, ffkq_postevent post, void *data);
 
 /** Consume data from user event: must be called on each signal */
-static void ffkq_post_consume(ffkq_postevent post);
+static void ffkq_post_consume(ffkq kq, ffkq_postevent post);
