@@ -120,9 +120,11 @@ static int _ffkcall_exec(struct ffkcall *kc)
 	return 0;
 }
 
-/** Process the submission queue, perform operations, store result in completion queue */
-static inline void ffkcallq_process_sq(ffringqueue *sq)
+/** Process the submission queue, perform operations, store result in completion queue.
+Return N of operations executed. */
+static inline ffuint ffkcallq_process_sq(ffringqueue *sq)
 {
+	ffuint n = 0;
 	struct ffkcall *kc;
 	for (;;) {
 		if (0 != ffrq_fetch(sq, (void**)&kc, NULL))
@@ -132,6 +134,7 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 			kc->state = 0;
 			continue;
 		}
+		n++;
 		kc->state = 2;
 
 		ffuint used;
@@ -145,20 +148,28 @@ static inline void ffkcallq_process_sq(ffringqueue *sq)
 				assert(0);
 		}
 	}
+
+	return n;
 }
 
-/** Process the completion queue, call a result handling function */
-static inline void ffkcallq_process_cq(ffringqueue *cq)
+/** Process the completion queue, call a result handling function.
+Return N of handled events. */
+static inline ffuint ffkcallq_process_cq(ffringqueue *cq)
 {
+	ffuint n = 0;
 	struct ffkcall *kc;
 	for (;;) {
 		if (0 != ffrq_fetch_sr(cq, (void**)&kc, NULL))
 			break;
 
 		kc->state = 0;
-		if (kc->op != 0)
+		if (kc->op != 0) {
 			kc->handler(kc->param);
+			n++;
+		}
 	}
+
+	return n;
 }
 
 static inline void ffkcall_cancel(struct ffkcall *kc)
