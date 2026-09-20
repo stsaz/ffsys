@@ -95,8 +95,9 @@ static wchar_t* _ffargv_to_cmdln(const char **argv)
 	return args;
 }
 
-/** Start a new process with the specified command line */
-static ffps _ffps_exec_cmdln(const wchar_t *filename, wchar_t *cmdln, ffps_execinfo *i)
+/** Start a new process with the specified command line.
+workdir: current directory of the new process (NULL: inherit) */
+static ffps _ffps_exec_cmdln(const wchar_t *filename, wchar_t *cmdln, const wchar_t *workdir, ffps_execinfo *i)
 {
 	STARTUPINFOW si = {};
 	si.cb = sizeof(STARTUPINFO);
@@ -121,8 +122,7 @@ static ffps _ffps_exec_cmdln(const wchar_t *filename, wchar_t *cmdln, ffps_execi
 
 	const ffuint f = CREATE_UNICODE_ENVIRONMENT;
 	PROCESS_INFORMATION info;
-	BOOL b = CreateProcessW(filename, cmdln, NULL, NULL, inherit_handles, f, /*env*/ NULL
-		, /*startup dir*/ NULL, &si, &info);
+	BOOL b = CreateProcessW(filename, cmdln, NULL, NULL, inherit_handles, f, /*env*/ NULL, workdir, &si, &info);
 
 	if (i->in != INVALID_HANDLE_VALUE) {
 		SetHandleInformation(i->in, HANDLE_FLAG_INHERIT, 0);
@@ -144,17 +144,24 @@ static inline ffps ffps_exec_info(const char *filename, ffps_execinfo *info)
 {
 	ffps ps = FFPS_NULL;
 	wchar_t wfn_s[256], *wfn, *args;
+	wchar_t wwd_s[256], *wwd = NULL;
 	if (NULL == (wfn = ffsz_alloc_buf_utow(wfn_s, FF_COUNT(wfn_s), filename)))
 		return FFPS_NULL;
 
 	if (NULL == (args = _ffargv_to_cmdln(info->argv)))
 		goto end;
 
-	ps = _ffps_exec_cmdln(wfn, args, info);
+	if (info->workdir != NULL
+		&& NULL == (wwd = ffsz_alloc_buf_utow(wwd_s, FF_COUNT(wwd_s), info->workdir)))
+		goto end;
+
+	ps = _ffps_exec_cmdln(wfn, args, wwd, info);
 
 end:
 	if (wfn != wfn_s)
 		ffmem_free(wfn);
+	if (wwd != wwd_s)
+		ffmem_free(wwd);
 	ffmem_free(args);
 	return ps;
 }
