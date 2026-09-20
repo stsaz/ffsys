@@ -8,6 +8,7 @@ ffwinreg_info ffwinreg_isstr
 ffwinreg_read
 ffwinreg_write ffwinreg_writestr ffwinreg_writeint
 ffwinreg_del
+ffwinreg_deltree
 ffwinreg_enum_init
 ffwinreg_enum_destroy
 ffwinreg_enum_begin
@@ -341,6 +342,22 @@ end:
 		ffmem_free(wsubkey);
 	if (wname != wname_s)
 		ffmem_free(wname);
+	return r;
+}
+
+/** Delete subkey with all its subkeys and values.
+subkey: subkey of 'k'; if NULL: delete subkeys and values of 'k'
+Return 0 on success */
+static inline int ffwinreg_deltree(ffwinreg k, const char *subkey)
+{
+	wchar_t ws[256], *w = NULL;
+	if (subkey != NULL
+		&& NULL == (w = ffsz_alloc_buf_utow(ws, FF_COUNT(ws), subkey)))
+		return -1;
+
+	int r = RegDeleteTreeW(k, w);
+	if (w != ws)
+		ffmem_free(w);
 	return r;
 }
 
