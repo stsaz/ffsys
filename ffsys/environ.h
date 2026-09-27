@@ -51,7 +51,8 @@ static inline char* ffenv_expand(void *unused, char *dst, ffsize dst_cap, const 
 		if (NULL == (dst = (char*)ffmem_alloc(dst_cap)))
 			goto end;
 	}
-	ffs_wtou(dst, dst_cap, wdst, wlen);
+	if (ffs_wtou(dst, dst_cap, wdst, wlen) < 0)
+		dst = NULL; // Input buffer too small
 
 end:
 	if (wsrc != ws)
@@ -195,7 +196,8 @@ static inline char* ffenv_expand(void *unused, char *dst, ffsize dst_cap, const 
 		if (0 == ffstr_growaddchar(&out, &dst_cap, '\0'))
 			return NULL;
 	} else {
-		ffstr_addchar(&out, dst_cap, '\0');
+		if (0 == ffstr_addchar(&out, dst_cap, '\0'))
+			return NULL; // Input buffer too small
 	}
 
 	return out.ptr;
