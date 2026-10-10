@@ -5,7 +5,7 @@
 ffwinreg_open
 ffwinreg_close
 ffwinreg_info ffwinreg_isstr
-ffwinreg_read
+ffwinreg_read ffwinreg_readstr
 ffwinreg_write ffwinreg_writestr ffwinreg_writeint
 ffwinreg_del
 ffwinreg_deltree
@@ -250,6 +250,19 @@ end:
 		ffmem_free(wname);
 	ffmem_free(outbuf);
 	return r;
+}
+
+/** Read string value from an open registry key.
+val: output string.  Free with ffstr_free().
+Return 0 on success */
+static inline int ffwinreg_readstr(ffwinreg k, const char *name, ffstr *val)
+{
+	ffwinreg_val v = {};
+	if (1 != ffwinreg_read(k, name, &v)
+		|| !ffwinreg_isstr(v.type))
+		return -1;
+	ffstr_set(val, v.data, v.datalen);
+	return 0;
 }
 
 /** Write value
